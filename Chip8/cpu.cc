@@ -40,3 +40,8 @@ SC_MODULE(and2){
     sensitive << clk.pos(); //run func at positive clock edge
   }
 }
+
+
+
+
+
