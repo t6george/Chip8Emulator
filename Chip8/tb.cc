@@ -26,3 +26,6 @@ void tb::sink(){ //recieves resultant outputs from tested SC_MODULE
     }
     sc_stop(); //end simulation of SYSTEM
 }
+
+//Note: temp is sent and in_data is received by tb concurrently since
+//source and sink are both clocked threads
