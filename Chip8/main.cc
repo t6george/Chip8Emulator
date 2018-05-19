@@ -19,7 +19,7 @@ SC_MODULE(SYSTEM){
 
     
 
-    SC_CTOR(SYSTEM): tb0(new tb("tb0")), fir0(new fir("fir0 ")),clk_sig("clk_sig",10,SC_NS){ //10 nanosecond clock period
+    SC_CTOR(SYSTEM): tb0(new tb("tb0"),64), fir0(new fir("fir0 ")),clk_sig("clk_sig",10,SC_NS){ //10 nanosecond clock period
         tb0->clk(clk_sig);
         fir0->clk(clk_sig);
         

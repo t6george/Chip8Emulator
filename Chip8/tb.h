@@ -4,6 +4,8 @@
 #include <systemc.h>
 
 SC_MODULE(tb){
+    int num_tests;
+
     sc_in<bool> rst;
     sc_in<bool> clk;
     sc_in<sc_int<16>> out; 
@@ -19,7 +21,13 @@ SC_MODULE(tb){
 
     FILE *outf;
 
-    SC_CTOR(tb){
+    sc_time start_time[num_tests];
+    sc_time end_time[num_tests];
+    sc_time clk_period;
+
+
+    SC_CTOR(tb, int test_count){
+        this.num_tests = test_count;
         SC_CTHREAD(source, clk.pos());
         SC_CTHREAD(sink, clk.pos());
     }
