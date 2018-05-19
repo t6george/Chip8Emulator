@@ -1,3 +1,6 @@
+#ifndef TB_H
+#define TB_H
+
 #include <systemc.h>
 
 SC_MODULE(tb){
@@ -14,8 +17,12 @@ SC_MODULE(tb){
     void source();
     void sink();
 
+    FILE *outf;
+
     SC_CTOR(tb){
         SC_CTHREAD(source, clk.pos());
         SC_CTHREAD(sink, clk.pos());
     }
 };
+
+#endif

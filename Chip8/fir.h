@@ -1,3 +1,6 @@
+#ifndef FIR_H
+#define FIR_H
+
 #include <systemc.h>
 
 SC_MODULE(fir){
@@ -20,3 +23,5 @@ SC_MODULE(fir){
   }
 
 }
+
+#endif

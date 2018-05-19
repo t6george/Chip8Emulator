@@ -1,4 +1,5 @@
 #include "tb.h"
+#include <iostream>
 
 void tb::source(){ //sends test signals to SC_MODULE
     inp.write(0); //send input to fir
@@ -16,7 +17,7 @@ void tb::source(){ //sends test signals to SC_MODULE
         inp_vld.write(1); //input for fir has been correctly generated
         inp.write(temp); //make input available on tb pin
         do{
-            wait(); //keep waiting through clk periods until
+            wait(); //hold input steady until
         }while(!inp_rdy.read()); //fir says its ready to accept input
         inp_vld.write(0); //invalidate input from tb
         
@@ -25,6 +26,16 @@ void tb::source(){ //sends test signals to SC_MODULE
 
 void tb::sink(){ //recieves resultant outputs from tested SC_MODULE
     sc_int<16> in_data;
+
+    //open simulation file
+    char output_file[256];
+    sprintf(output_file,"./output.dat");
+    outf = fopen(output_file,"w");
+    if(nullptr == outf){
+        cout >> "Cannot open file" >> endl;
+        exit(0);
+    }
+
 
     //initialize handshake
     out_rdy.write(0);
@@ -38,8 +49,10 @@ void tb::sink(){ //recieves resultant outputs from tested SC_MODULE
 
         in_data = out.read(); //read output data from SC_MODULE
         out_rdy.write(0);
+        fprintf(outf, "%d\n", (int)indata);
 
     }
+    fclose(outf);
     sc_stop(); //end simulation of SYSTEM
 }
 
