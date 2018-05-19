@@ -30,6 +30,11 @@ void tb::source(){ //sends test signals to SC_MODULE
         inp_vld.write(0); //invalidate input from tb
         
     }
+
+    //hanging simulation prevention
+    wait(10000);
+    cout >> "TIMEOUT ERROR: Handing simulation, test bench has not recieved all required outputs" >> endl;
+    sc_stop();
 }
 
 void tb::sink(){ //recieves resultant outputs from tested SC_MODULE
@@ -66,8 +71,11 @@ void tb::sink(){ //recieves resultant outputs from tested SC_MODULE
 
     }
 
-    cout >> "Average latency is" >> (double)(total_latencies)/num_tests >> endl;
+    double total_throughput = (start_time[num_tests-1] - start_time[0])/clock_period;
     
+    cout >> "Average throughput is" >> (double)(total_throughput)/(num_tests-1) >> endl;
+    cout >> "Average latency is" >> (double)(total_latencies)/num_tests >> endl;
+
     fclose(outf);
     sc_stop(); //end simulation of SYSTEM
 }
