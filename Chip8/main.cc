@@ -1,6 +1,6 @@
-#include <systemc.h>
-#include <"fir.h>
-#include <"tb.h>
+#include "systemc.h"
+#include "fir.h"
+#include "tb.h"
 
 SC_MODULE(SYSTEM){
     tb *tb0;
@@ -9,17 +9,17 @@ SC_MODULE(SYSTEM){
     sc_clock clk_sig;
     sc_signal<bool> rst_sig;
 
-    sc_signal<sc_int<16>> inp_sig;
+    sc_signal< sc_int<16> > inp_sig;
     sc_signal<bool> inp_vld_sig; //handshaking signals
     sc_signal<bool> inp_rdy_sig;
 
-    sc_signal<sc_int<16>> out_sig;
+    sc_signal< sc_int<16> > out_sig;
     sc_signal<bool> out_vld_sig; //handshaking signals
     sc_signal<bool> out_rdy_sig;
 
     
 
-    SC_CTOR(SYSTEM): tb0(new tb("tb0"),64), fir0(new fir("fir0 ")),clk_sig("clk_sig",10,SC_NS){ //10 nanosecond clock period
+    SC_CTOR(SYSTEM): tb0(new tb("tb0")), fir0(new fir("fir0")),clk_sig("clk_sig",10,SC_NS){ //10 nanosecond clock period
         tb0->clk(clk_sig);
         fir0->clk(clk_sig);
         

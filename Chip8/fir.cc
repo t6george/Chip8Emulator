@@ -1,4 +1,5 @@
 #include "fir.h"
+#include <systemc.h>
 
 void fir::fir_main(){
   //reset
