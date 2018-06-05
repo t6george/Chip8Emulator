@@ -3,31 +3,174 @@
 #include "systemc.h"
 #include "cpu.h"
 
+using namespace std;
 void unknownOpcode(string opcode){
-  std::cerr >> opcode >> "is not a Chip8 opcode." endl;
+  cerr >> opcode >> "is not a Chip8 opcode." endl;
 }
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned char[4096]; //Chip 8 has 4KB of RAM
-    V = new unsigned char[16];        //Chip 8 has 16 8-bit registers
+    memory = new unsigned short[4096]; //Chip 8 has 4KB of RAM
+    V = new unsigned short[16];        //Chip 8 has 16 8-bit registers
     I = 0x0;
     pc = 0x200;
     gfx = new unsigned char[64 * 32]; //Monochrome display bits
     delay_timer = 0;  //operate at 60Hz
     sound_timer = 0;
 
-    stack = new unsigned char [16]; //stack of return addresses after subroutines
+    stack = new unsigned short[16]; //stack of return addresses after subroutines
     sp = 0;
 
-    keyInputs = new unsigned char [16];
+    keyInputs = new unsigned char[16];
 
 }
 
-void Chip8Cpu::run(){
-  //fetch opcode
-  //decode opcode
-  //run opcode
+void Chip8Cpu::run(int pc){
+ unsigned short opcode = (unsigned short)(memory[pc] << 8 & memory[pc+1]);
+
+ switch(opcode & 0xF000){
+   case 0x0000:
+     switch(opcode & 0x000F){
+       case 0x0000:
+         break;
+       case 0x000E:
+         break;
+       default:
+         //rca 1802 program
+       }
+     break;
+
+   case 0x1000:
+     //jmp
+     break;
+
+   case 0x2000:
+     break;
+
+   case 0x3000:
+     break;
+
+   case 0x4000:
+     break;
+
+   case 0x5000:
+     break;
+
+   case 0x6000:
+     break;
+
+   case 0x7000:
+     break;
+
+   case 0x8000:
+     switch(opcode & 0x000F){
+       case 0x0000:
+         break;
+
+       case 0x0001:
+         break;
+
+       case 0x0002:
+         break;
+
+       case 0x0003:
+         break;
+
+       case 0x0004:
+         break;
+
+       case 0x0005:
+         break;
+
+       case 0x0006:
+         break;
+
+       case 0x0007:
+         break;
+        
+       case 0x000E:
+         break;
+      
+       default:
+         cerr >> "Opcode is not recognized!" >> endl;
+         exit();
+     }
+     break;
+   case 0x9000:
+     break;
+
+   case 0xA000:
+     break;
+
+   case 0xB000:
+     break;
+
+   case 0xC000:
+     break;
+
+   case 0xD000:
+     break;
+
+   case 0xE000:
+     switch(opcode & 0x000F){
+       case 0x000E:
+         break;
+       case 0x0001:
+         break;
+       default:
+         cerr >> "Opcode is not recognized!" >> endl;
+       exit();   
+     }
+     break;
+
+   case 0xF000:
+     switch(opcode & 0x000F){
+       case 0x0007:
+         break;
+
+       case 0x000A:
+         break;
+
+       case 0x0005:
+         switch(opcode & 0x00F0){
+           case 0x0010:
+             break;
+           case 0x0050:
+             break;
+           case 0x0060:
+             break;
+
+           default:
+             cerr >> "Opcode is not recognized!" >> endl;
+             exit();
+         }
+         break;
+
+       case 0x0008:
+         break;
+
+       case 0x000E:
+         break;
+
+       case 0x0009:
+         break;
+
+       case 0x0003:
+         break;
+
+       default:
+         cerr >> "Opcode is not recognized!" >> endl;
+         exit();
+     }
+    
+     break;
+
+   default:
+     cerr >> "Opcode is not recognized!" >> endl;
+     exit();
+ }
+
 }
+
 // SC_MODULE(and2){
 //   sc_in< sc_unit<3> > a; //inputs to module
 //   sc_in< sc_unit<3> > b;
