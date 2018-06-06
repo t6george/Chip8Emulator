@@ -2,9 +2,7 @@
 #include <string>
 //#include "systemc.h"
 #include "cpu.h"
-#include "SDL.h"
 
-//to compile: g++ cpu.cc -F/Library/Frameworks/SDL2.framework/Headers -framework SDL2
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){

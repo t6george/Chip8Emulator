@@ -10,9 +10,10 @@ DEPENDANCIES = \
 	$(HEADERS) \
 	$(SOURCES)
 
-LIBS= -lsystemc -lstdc++ -lm
+LIBS = -lsystemc -lstdc++ -lm
 
-TESTS= main
+TESTS = main
+
 
 all: $(TESTS)
 	./$(TESTS)
@@ -35,3 +36,24 @@ cmp_result:
 		echo "SIMULATION FAILED"; \
 	fi
 	@echo "-----------------------------------------"
+
+#################################################################
+
+SDL_LIB_DIRS = $(SDL_HOME)/lib
+
+SDL_INCLUDE_DIRS = -I. -I$(SDL_HOME)/include
+
+SDL_HEADERS = peripherals.h
+SDL_SOURCES = peripherals.cc
+
+SDL_LIBS = -lSDL2-2.0.0
+
+SDL_EXEC = gfx
+
+SDL_DEPENDANCIES = \
+	Makefile \
+	$(SDL_HEADERS) \
+	$(SDL_SOURCES)
+
+gfx: $(SDL_DEPENDANCIES)
+	gcc -g -o $@ $(SDL_SOURCES) $(SDL_INCLUDE_DIRS) -L$(SDL_LIB_DIRS) $(SDL_LIBS)
