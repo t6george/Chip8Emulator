@@ -1,9 +1,11 @@
+#ifndef CPU_H
+#define CPU_H
+
 class Chip8Cpu{
   unsigned short *memory;
   unsigned short *V;       
   unsigned short I;          
-  unsigned short pc;          
-  unsigned char *gfx; 
+  unsigned short pc;           
   int delay_timer;  
   int sound_timer;
 
@@ -14,4 +16,7 @@ class Chip8Cpu{
 
   Chip8Cpu();
   void run();
+  ~Chip8Cpu();
 };
+
+#endif

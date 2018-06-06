@@ -1,19 +1,17 @@
 #include <iostream>
 #include <string>
-#include "systemc.h"
+//#include "systemc.h"
 #include "cpu.h"
+#include "SDL.h"
 
+//to compile: g++ cpu.cc -F/Library/Frameworks/SDL2.framework/Headers -framework SDL2
 using namespace std;
-void unknownOpcode(string opcode){
-  cerr >> opcode >> "is not a Chip8 opcode." endl;
-}
 
 Chip8Cpu::Chip8Cpu(){
     memory = new unsigned short[4096]; //Chip 8 has 4KB of RAM
     V = new unsigned short[16];        //Chip 8 has 16 8-bit registers
     I = 0x0;
     pc = 0x200;
-    gfx = new unsigned char[64 * 32]; //Monochrome display bits
     delay_timer = 0;  //operate at 60Hz
     sound_timer = 0;
 
@@ -22,6 +20,13 @@ Chip8Cpu::Chip8Cpu(){
 
     keyInputs = new unsigned char[16];
 
+}
+
+Chip8Cpu::~Chip8Cpu(){
+  delete [] memory;
+  delete [] V;
+  delete [] stack;
+  delete [] keyInputs;
 }
 
 void Chip8Cpu::run(int pc){
