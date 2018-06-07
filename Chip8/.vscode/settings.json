@@ -1,6 +1,8 @@
 {
   "python.linting.enabled": false,
   "files.associations": {
-    "__locale": "cpp"
+    "__locale": "cpp",
+    "algorithm": "cpp",
+    "iostream": "cpp"
   }
 }

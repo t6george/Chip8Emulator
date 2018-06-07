@@ -41,12 +41,12 @@ cmp_result:
 
 SDL_LIB_DIRS = $(SDL_HOME)/lib
 
-SDL_INCLUDE_DIRS = -I. -I$(SDL_HOME)/include
+SDL_INCLUDE_DIRS = -I. -I$(SDL_HOME)/include/SDL2
 
 SDL_HEADERS = peripherals.h
 SDL_SOURCES = peripherals.cc
 
-SDL_LIBS = -lSDL2-2.0.0
+SDL_LIBS = -lSDL2-2.0.0 -lstdc++
 
 SDL_EXEC = gfx
 
@@ -57,3 +57,4 @@ SDL_DEPENDANCIES = \
 
 gfx: $(SDL_DEPENDANCIES)
 	gcc -g -o $@ $(SDL_SOURCES) $(SDL_INCLUDE_DIRS) -L$(SDL_LIB_DIRS) $(SDL_LIBS)
+	./$(SDL_EXEC)

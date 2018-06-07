@@ -8,7 +8,7 @@ using namespace std;
 
 class Peripherals{
   private:
-    unsigned char *gfx;
+    short**gfx;
 
   public:
     Peripherals();
