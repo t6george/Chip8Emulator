@@ -48,7 +48,7 @@ gfx_INCLUDE_DIRS = -I. -I$(gfx_HOME)/include/allegro5
 gfx_HEADERS = peripherals.h
 gfx_SOURCES = peripherals.cc
 
-gfx_LIBS = -lallegro -lallegro_main -lstdc++
+gfx_LIBS = -lallegro -lallegro_main -lallegro_primitives.5.2 -lstdc++
 
 gfx_EXEC = gfx
 
