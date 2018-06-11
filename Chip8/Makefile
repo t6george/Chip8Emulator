@@ -39,22 +39,24 @@ cmp_result:
 
 #################################################################
 
-SDL_LIB_DIRS = $(SDL_HOME)/lib
+export gfx_HOME=/usr/local/Cellar/allegro/5.2.4.0
 
-SDL_INCLUDE_DIRS = -I. -I$(SDL_HOME)/include/SDL2
+gfx_LIB_DIRS = $(gfx_HOME)/lib
 
-SDL_HEADERS = peripherals.h
-SDL_SOURCES = peripherals.cc
+gfx_INCLUDE_DIRS = -I. -I$(gfx_HOME)/include/allegro5
 
-SDL_LIBS = -lSDL2-2.0.0 -lstdc++
+gfx_HEADERS = peripherals.h
+gfx_SOURCES = peripherals.cc
 
-SDL_EXEC = gfx
+gfx_LIBS = -lallegro -lallegro_main -lstdc++
 
-SDL_DEPENDANCIES = \
+gfx_EXEC = gfx
+
+gfx_DEPENDANCIES = \
 	Makefile \
-	$(SDL_HEADERS) \
-	$(SDL_SOURCES)
+	$(gfx_HEADERS) \
+	$(gfx_SOURCES)
 
-gfx: $(SDL_DEPENDANCIES)
-	gcc -g -o $@ $(SDL_SOURCES) $(SDL_INCLUDE_DIRS) -L$(SDL_LIB_DIRS) $(SDL_LIBS)
-	./$(SDL_EXEC)
+gfx: $(gfxL_DEPENDANCIES)
+	gcc -g -o $@ $(gfx_SOURCES) $(gfx_INCLUDE_DIRS) -L$(gfx_LIB_DIRS) $(gfx_LIBS)
+	./$(gfx_EXEC)

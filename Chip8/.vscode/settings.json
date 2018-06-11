@@ -3,6 +3,8 @@
   "files.associations": {
     "__locale": "cpp",
     "algorithm": "cpp",
-    "iostream": "cpp"
+    "iostream": "cpp",
+    "__config": "cpp",
+    "__nullptr": "cpp"
   }
 }

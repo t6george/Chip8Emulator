@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <allegro5/allegro.h>
 #include <iostream>
 
 using namespace std;
