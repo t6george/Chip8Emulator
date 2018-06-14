@@ -17,7 +17,7 @@ class Chip8Cpu{
     Chip8Cpu();
     void run();
     void kernel();
-    void loadProgram(string fileName);
+    bool loadProgram(const char* fileName);
     ~Chip8Cpu();
 };
 

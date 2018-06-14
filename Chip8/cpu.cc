@@ -27,11 +27,49 @@ Chip8Cpu::~Chip8Cpu(){
   delete [] keyInputs;
 }
 
-void Chip8Cpu::loadProgram(string fileName){
-  int numBytes = fileName.length();
-  for(int i = 0; i < numBytes; i++){
-    this->memory[0x200 + i] = (char)fileName.at(i);
+bool Chip8Cpu::loadProgram(const char* fileName){
+  cout << "Loading ROM" << endl;
+  FILE* rom = fopen(fileName, "rb");
+  if (nullptr == rom) {
+    cerr << "Failed to open ROM" << endl;
+    return false;
   }
+      // Get file size
+    fseek(rom, 0, SEEK_END);
+    long rom_size = ftell(rom);
+    rewind(rom);
+
+    // Allocate memory to store rom
+    char* rom_buffer = (char*) malloc(sizeof(char) * rom_size);
+    if (rom_buffer == NULL) {
+        cerr << "Failed to allocate memory for ROM" << endl;
+        return false;
+    }
+
+    // Copy ROM into buffer
+    size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom);
+    if (result != rom_size) {
+        cerr << "Failed to read ROM" << endl;
+        return false;
+    }
+
+    // Copy buffer to memory
+    if ((4096-0x200) > rom_size){
+        for (int i = 0; i < rom_size; ++i) {
+            memory[i + 0x200] = (uint8_t)rom_buffer[i];   // Load into memory starting
+                                                        // at 0x200 (=512)
+        }
+    }
+    else {
+        cerr << "ROM too large!" << endl;
+        return false;
+    }
+
+    fclose(rom);
+    free(rom_buffer);
+
+    return true;
+
 }
 
 void Chip8Cpu::run(int pc){
