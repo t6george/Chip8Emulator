@@ -1,5 +1,6 @@
 #include "peripherals.h"
 #include <iostream>
+#include <thread>
 
 //to compile: g++ peripherals.cc -F/Library/Frameworks/SDL2.framework/Headers -framework SDL2
  
@@ -12,7 +13,6 @@ Peripherals::Peripherals(): FPS(60.0){
         this->gfx[i][j] = 0;
       }
   }
-	this->gfx[2][5] = 1;
 
 	this->timer = al_create_timer(1.0 / FPS);
 	if (!timer) {
@@ -47,10 +47,10 @@ Peripherals::~Peripherals(){
 }
 
 
-void Peripherals::updateDisplay(){
+void Peripherals::updateDisplay(bool toUpdate){
 
 	get_event = al_wait_for_event_until(event_queue, &event, &timeout);
-	
+
 	if (get_event) {
 		switch (event.type) {
 			case ALLEGRO_EVENT_TIMER:
@@ -64,19 +64,19 @@ void Peripherals::updateDisplay(){
 				break;
 		}
 	}
+	if(toUpdate){
+		al_clear_to_color(al_map_rgb(0, 0, 0));
 
-	al_clear_to_color(al_map_rgb(0, 0, 0));
-
-	for(int i = 0; i < 64; i++){
-		for(int j = 0; j < 32; j++){
-			if(this->gfx[j][i] == 1){
-				al_draw_filled_rectangle(i*20,j*20,i*20+20,j*20+20,al_map_rgb(255,255,255));
+		for(int i = 0; i < 64; i++){
+			for(int j = 0; j < 32; j++){
+				if(this->gfx[j][i] == 1){
+					al_draw_filled_rectangle(i*20,j*20,i*20+20,j*20+20,al_map_rgb(255,255,255));
+				}
 			}
 		}
+
+		al_flip_display();
 	}
-
-	al_flip_display();
-
 }
 
 int main(int argc, char*argv[]){

@@ -13,10 +13,12 @@ class Chip8Cpu{
   unsigned int sp;
 
   unsigned char *keyInputs;
-
-  Chip8Cpu();
-  void run();
-  ~Chip8Cpu();
+  public:
+    Chip8Cpu();
+    void run();
+    void kernel();
+    void loadProgram(string fileName);
+    ~Chip8Cpu();
 };
 
 #endif

@@ -27,6 +27,13 @@ Chip8Cpu::~Chip8Cpu(){
   delete [] keyInputs;
 }
 
+void Chip8Cpu::loadProgram(string fileName){
+  int numBytes = fileName.length();
+  for(int i = 0; i < numBytes; i++){
+    this->memory[0x200 + i] = (char)fileName.at(i);
+  }
+}
+
 void Chip8Cpu::run(int pc){
  unsigned short opcode = (unsigned short)(memory[pc] << 8 & memory[pc+1]);
 
@@ -94,7 +101,7 @@ void Chip8Cpu::run(int pc){
          break;
       
        default:
-         cerr >> "Opcode is not recognized!" >> endl;
+         cerr << "Opcode is not recognized!" << endl;
          exit();
      }
      break;
@@ -120,7 +127,7 @@ void Chip8Cpu::run(int pc){
        case 0x0001:
          break;
        default:
-         cerr >> "Opcode is not recognized!" >> endl;
+         cerr << "Opcode is not recognized!" << endl;
        exit();   
      }
      break;
@@ -143,7 +150,7 @@ void Chip8Cpu::run(int pc){
              break;
 
            default:
-             cerr >> "Opcode is not recognized!" >> endl;
+             cerr << "Opcode is not recognized!" << endl;
              exit();
          }
          break;
@@ -161,17 +168,21 @@ void Chip8Cpu::run(int pc){
          break;
 
        default:
-         cerr >> "Opcode is not recognized!" >> endl;
+         cerr << "Opcode is not recognized!" << endl;
          exit();
      }
     
      break;
 
    default:
-     cerr >> "Opcode is not recognized!" >> endl;
+     cerr << "Opcode is not recognized!" << endl;
      exit();
  }
 
+}
+
+void Chip8Cpu::kernel(){
+  //multithread here
 }
 
 // SC_MODULE(and2){

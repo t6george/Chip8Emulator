@@ -23,7 +23,7 @@ class Peripherals{
 
     Peripherals();
     ~Peripherals();
-    void updateDisplay();
+    void updateDisplay(bool toUpdate);
     void generateSFX();
     void getInput();
 };
