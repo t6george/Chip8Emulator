@@ -15,9 +15,9 @@ class Chip8Cpu{
   unsigned char *keyInputs;
   public:
     Chip8Cpu();
-    void run();
+    void run(int pc);
     void kernel();
-    bool loadProgram(const char* fileName);
+    bool loadProgram(char* fileName);
     ~Chip8Cpu();
 };
 

@@ -1,12 +1,15 @@
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 //#include "systemc.h"
 #include "cpu.h"
 
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned short[4096]; //Chip 8 has 4KB of RAM
+    memory = new unsigned short[0x1000]; //Chip 8 has 4KB of RAM
     V = new unsigned short[16];        //Chip 8 has 16 8-bit registers
     I = 0x0;
     pc = 0x200;
@@ -27,48 +30,51 @@ Chip8Cpu::~Chip8Cpu(){
   delete [] keyInputs;
 }
 
-bool Chip8Cpu::loadProgram(const char* fileName){
-  cout << "Loading ROM" << endl;
+bool Chip8Cpu::loadProgram(char* fileName){
+  cout << "Loading ROM..." << endl;
+
   FILE* rom = fopen(fileName, "rb");
   if (nullptr == rom) {
     cerr << "Failed to open ROM" << endl;
     return false;
   }
-      // Get file size
-    fseek(rom, 0, SEEK_END);
-    long rom_size = ftell(rom);
-    rewind(rom);
+    // Get file size
+  fseek(rom, 0, SEEK_END);
+  long rom_size = ftell(rom);
+  rewind(rom);
 
-    // Allocate memory to store rom
-    char* rom_buffer = (char*) malloc(sizeof(char) * rom_size);
-    if (rom_buffer == NULL) {
-        cerr << "Failed to allocate memory for ROM" << endl;
-        return false;
-    }
+  // Allocate memory to store rom
+  char* rom_buffer = new char[rom_size];
+  //char* rom_buffer = (char*) malloc(sizeof(char) * rom_size);
+  if (rom_buffer == NULL) {
+      cerr << "Failed to allocate memory for ROM" << endl;
+      return false;
+  }
 
-    // Copy ROM into buffer
-    size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom);
-    if (result != rom_size) {
-        cerr << "Failed to read ROM" << endl;
-        return false;
-    }
+  // Copy ROM into buffer
+  size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom);
+  if (result != rom_size) {
+      cerr << "Failed to read ROM" << endl;
+      return false;
+  }
 
-    // Copy buffer to memory
-    if ((4096-0x200) > rom_size){
-        for (int i = 0; i < rom_size; ++i) {
-            memory[i + 0x200] = (uint8_t)rom_buffer[i];   // Load into memory starting
-                                                        // at 0x200 (=512)
-        }
-    }
-    else {
-        cerr << "ROM too large!" << endl;
-        return false;
-    }
+  // Copy buffer to memory
+  if ((0x1000-0x200) > rom_size){
+      for (int i = 0; i < rom_size; ++i) {
+          memory[i + 0x200] = (uint8_t)rom_buffer[i];   // Load into memory starting
+                                                      // at 0x200 (=512)
+      }
+  }
+  else {
+      cerr << "ROM too large!" << endl;
+      return false;
+  }
 
-    fclose(rom);
-    free(rom_buffer);
+  fclose(rom);
+  delete[] rom_buffer;
 
-    return true;
+  cout << "Great Success!" << endl;
+  return true;
 
 }
 
@@ -83,6 +89,7 @@ void Chip8Cpu::run(int pc){
        case 0x000E:
          break;
        default:
+        break;
          //rca 1802 program
        }
      break;
@@ -140,7 +147,7 @@ void Chip8Cpu::run(int pc){
       
        default:
          cerr << "Opcode is not recognized!" << endl;
-         exit();
+         exit(1);
      }
      break;
    case 0x9000:
@@ -166,7 +173,7 @@ void Chip8Cpu::run(int pc){
          break;
        default:
          cerr << "Opcode is not recognized!" << endl;
-       exit();   
+       exit(1);   
      }
      break;
 
@@ -189,7 +196,7 @@ void Chip8Cpu::run(int pc){
 
            default:
              cerr << "Opcode is not recognized!" << endl;
-             exit();
+             exit(1);
          }
          break;
 
@@ -207,20 +214,27 @@ void Chip8Cpu::run(int pc){
 
        default:
          cerr << "Opcode is not recognized!" << endl;
-         exit();
+         exit(1);
      }
     
      break;
 
    default:
      cerr << "Opcode is not recognized!" << endl;
-     exit();
+     exit(1);
  }
 
 }
 
 void Chip8Cpu::kernel(){
   //multithread here
+}
+
+int main(int argc, char* argv[]){
+  Chip8Cpu* cpu = new Chip8Cpu();
+  //char *x = (char *)"pong.c8";
+  cpu->loadProgram((char *)"pong.c8");
+  return 0;
 }
 
 // SC_MODULE(and2){
