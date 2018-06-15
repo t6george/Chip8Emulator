@@ -61,8 +61,9 @@ bool Chip8Cpu::loadProgram(char* fileName){
   // Copy buffer to memory
   if ((0x1000-0x200) > rom_size){
       for (int i = 0; i < rom_size; ++i) {
-          memory[i + 0x200] = (uint8_t)rom_buffer[i];   // Load into memory starting
+          memory[0x200 + i] = (uint8_t)rom_buffer[i];   // Load into memory starting
                                                       // at 0x200 (=512)
+                                                      //cout << hex << memory[0x200 + i] << endl;
       }
   }
   else {
@@ -78,9 +79,9 @@ bool Chip8Cpu::loadProgram(char* fileName){
 
 }
 
-void Chip8Cpu::run(int pc){
- unsigned short opcode = (unsigned short)(memory[pc] << 8 & memory[pc+1]);
-
+void Chip8Cpu::run(){
+ unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
+ cout << hex << opcode << endl;
  switch(opcode & 0xF000){
    case 0x0000:
      switch(opcode & 0x000F){
@@ -98,131 +99,139 @@ void Chip8Cpu::run(int pc){
      //jmp
      break;
 
-   case 0x2000:
-     break;
+  case 0x2000:{
+    unsigned short address = (unsigned short)opcode & 0x0FFF;
+    stack[sp] = pc; //save where program counter was at on the stack
+    sp++; //increment stack
+    pc = address; //jumpt to NNN: address of desired subroutine
+    break;
+  }
 
-   case 0x3000:
-     break;
+  case 0x3000:
+    break;
 
-   case 0x4000:
-     break;
+  case 0x4000:
+    break;
 
-   case 0x5000:
-     break;
+  case 0x5000:
+    break;
 
-   case 0x6000:
-     break;
+  case 0x6000:{
+    int ind = (opcode & 0x0F00) >> 8;
+    V[ind] = (unsigned short)(opcode & 0x0FF); //set register N to NN (8 bits)
+    pc += 2; //advance program counter to next opcode
+    break;
+  }
+  case 0x7000:
+    break;
 
-   case 0x7000:
-     break;
+  case 0x8000:
+    switch(opcode & 0x000F){
+      case 0x0000:
+        break;
 
-   case 0x8000:
-     switch(opcode & 0x000F){
-       case 0x0000:
-         break;
+      case 0x0001:
+        break;
 
-       case 0x0001:
-         break;
+      case 0x0002:
+        break;
 
-       case 0x0002:
-         break;
+      case 0x0003:
+        break;
 
-       case 0x0003:
-         break;
+      case 0x0004:
+        break;
 
-       case 0x0004:
-         break;
+      case 0x0005:
+        break;
 
-       case 0x0005:
-         break;
+      case 0x0006:
+        break;
 
-       case 0x0006:
-         break;
-
-       case 0x0007:
-         break;
-        
-       case 0x000E:
-         break;
+      case 0x0007:
+        break;
       
-       default:
-         cerr << "Opcode is not recognized!" << endl;
-         exit(1);
-     }
-     break;
-   case 0x9000:
-     break;
-
-   case 0xA000:
-     break;
-
-   case 0xB000:
-     break;
-
-   case 0xC000:
-     break;
-
-   case 0xD000:
-     break;
-
-   case 0xE000:
-     switch(opcode & 0x000F){
-       case 0x000E:
-         break;
-       case 0x0001:
-         break;
-       default:
-         cerr << "Opcode is not recognized!" << endl;
-       exit(1);   
-     }
-     break;
-
-   case 0xF000:
-     switch(opcode & 0x000F){
-       case 0x0007:
-         break;
-
-       case 0x000A:
-         break;
-
-       case 0x0005:
-         switch(opcode & 0x00F0){
-           case 0x0010:
-             break;
-           case 0x0050:
-             break;
-           case 0x0060:
-             break;
-
-           default:
-             cerr << "Opcode is not recognized!" << endl;
-             exit(1);
-         }
-         break;
-
-       case 0x0008:
-         break;
-
-       case 0x000E:
-         break;
-
-       case 0x0009:
-         break;
-
-       case 0x0003:
-         break;
-
-       default:
-         cerr << "Opcode is not recognized!" << endl;
-         exit(1);
-     }
+      case 0x000E:
+        break;
     
-     break;
+      default:
+        cerr << "Opcode is not recognized!" << endl;
+        exit(1);
+    }
+    break;
+  case 0x9000:
+    break;
 
-   default:
-     cerr << "Opcode is not recognized!" << endl;
-     exit(1);
- }
+  case 0xA000:
+    break;
+
+  case 0xB000:
+    break;
+
+  case 0xC000:
+    break;
+
+  case 0xD000:
+    break;
+
+  case 0xE000:
+    switch(opcode & 0x000F){
+      case 0x000E:
+        break;
+      case 0x0001:
+        break;
+      default:
+        cerr << "Opcode is not recognized!" << endl;
+      exit(1);   
+    }
+    break;
+
+  case 0xF000:
+    switch(opcode & 0x000F){
+      case 0x0007:
+        break;
+
+      case 0x000A:
+        break;
+
+      case 0x0005:
+        switch(opcode & 0x00F0){
+          case 0x0010:
+            break;
+          case 0x0050:
+            break;
+          case 0x0060:
+            break;
+
+          default:
+            cerr << "Opcode is not recognized!" << endl;
+            exit(1);
+        }
+        break;
+
+      case 0x0008:
+        break;
+
+      case 0x000E:
+        break;
+
+      case 0x0009:
+        break;
+
+      case 0x0003:
+        break;
+
+      default:
+        cerr << "Opcode is not recognized!" << endl;
+        exit(1);
+    }
+  
+    break;
+
+  default:
+    cerr << "Opcode is not recognized!" << endl;
+    exit(1);
+  }
 
 }
 
@@ -234,6 +243,8 @@ int main(int argc, char* argv[]){
   Chip8Cpu* cpu = new Chip8Cpu();
   //char *x = (char *)"pong.c8";
   cpu->loadProgram((char *)"pong.c8");
+  cpu->run();
+  cpu->run();
   return 0;
 }
 
