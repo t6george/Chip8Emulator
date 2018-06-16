@@ -9,18 +9,17 @@
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned short[0x1000]; //Chip 8 has 4KB of RAM
-    V = new unsigned short[16];        //Chip 8 has 16 8-bit registers
+    memory = new unsigned short[0x1000]; //4KB of RAM
+    V = new unsigned short[16];        //16 8-bit registers
     I = 0x0;
     pc = 0x200;
-    delay_timer = 0;  //operate at 60Hz
+    delay_timer = 0;  //operates at 60Hz
     sound_timer = 0;
 
     stack = new unsigned short[16]; //stack of return addresses after subroutines
     sp = 0;
 
     keyInputs = new unsigned char[16];
-
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -79,6 +78,31 @@ bool Chip8Cpu::loadProgram(char* fileName){
 
 }
 
+void Chip8Cpu::loadFont(){
+  cout << "Loading Fonts..." << endl;
+  unsigned short fontset[80] = { 
+    0xf0, 0x90, 0x90, 0x90, 0xf0,
+    0x20, 0x60, 0x20, 0x20, 0x70, 
+    0xf0, 0x10, 0xf0, 0x80, 0xf0, 
+    0xf0, 0x10, 0xf0, 0x10, 0xf0, 
+    0x90, 0x90, 0xf0, 0x10, 0x10, 
+    0xf0, 0x80, 0xf0, 0x10, 0xf0, 
+    0xf0, 0x80, 0xf0, 0x90, 0xf0, 
+    0xf0, 0x10, 0x20, 0x40, 0x40, 
+    0xf0, 0x90, 0xf0, 0x90, 0xf0, 
+    0xf0, 0x90, 0xf0, 0x10, 0xf0, 
+    0xf0, 0x90, 0xf0, 0x90, 0x90, 
+    0xe0, 0x90, 0xe0, 0x90, 0xe0, 
+    0xf0, 0x80, 0x80, 0x80, 0xf0, 
+    0xe0, 0x90, 0x90, 0x90, 0xe0, 
+    0xf0, 0x80, 0xf0, 0x80, 0xf0, 
+    0xf0, 0x80, 0xf0, 0x80, 0x80}; 
+  for(int i = 0; i < 80; i++){
+    memory[0x50 + i] = (unsigned short)((fontset[i]) & 0xFF);
+  }
+  
+}
+
 void Chip8Cpu::run(){
  unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
  cout << hex << opcode << endl;
@@ -122,8 +146,12 @@ void Chip8Cpu::run(){
     pc += 2; //advance program counter to next opcode
     break;
   }
-  case 0x7000:
+  case 0x7000:{
+    int ind = (opcode & 0x0F00) >> 8;
+    int toAdd = opcode & 0x00FF;
+    V[ind] = (unsigned short)((V[ind] + toAdd) & 0xFF);
     break;
+  }
 
   case 0x8000:
     switch(opcode & 0x000F){
@@ -162,9 +190,11 @@ void Chip8Cpu::run(){
   case 0x9000:
     break;
 
-  case 0xA000:
+  case 0xA000:{
+    this->I = (unsigned short)(opcode & 0x0FFF); //set address pointer to NNN
+    pc += 2; //advance to next opcode
     break;
-
+  }
   case 0xB000:
     break;
 
@@ -172,6 +202,7 @@ void Chip8Cpu::run(){
     break;
 
   case 0xD000:
+    pc += 2;
     break;
 
   case 0xE000:
@@ -242,9 +273,10 @@ void Chip8Cpu::kernel(){
 int main(int argc, char* argv[]){
   Chip8Cpu* cpu = new Chip8Cpu();
   //char *x = (char *)"pong.c8";
-  cpu->loadProgram((char *)"pong.c8");
-  cpu->run();
-  cpu->run();
+  //cpu -> loadFont();
+  cpu -> loadProgram((char *)"pong.c8");
+  cpu -> run();
+  cpu -> run();
   return 0;
 }
 

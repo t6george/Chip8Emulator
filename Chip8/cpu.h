@@ -1,6 +1,8 @@
 #ifndef CPU_H
 #define CPU_H
 
+
+
 class Chip8Cpu{
   unsigned short *memory;
   unsigned short *V;       
@@ -17,6 +19,7 @@ class Chip8Cpu{
     Chip8Cpu();
     void run();
     void kernel();
+    void loadFont();
     bool loadProgram(char* fileName);
     ~Chip8Cpu();
 };
