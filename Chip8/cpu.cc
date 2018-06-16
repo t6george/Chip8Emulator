@@ -20,6 +20,7 @@ Chip8Cpu::Chip8Cpu(){
     sp = 0;
 
     keyInputs = new unsigned char[16];
+    peripherals = new Peripherals();
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -150,6 +151,7 @@ void Chip8Cpu::run(){
     int ind = (opcode & 0x0F00) >> 8;
     int toAdd = opcode & 0x00FF;
     V[ind] = (unsigned short)((V[ind] + toAdd) & 0xFF);
+    pc += 2;
     break;
   }
 
@@ -201,9 +203,31 @@ void Chip8Cpu::run(){
   case 0xC000:
     break;
 
-  case 0xD000:
+  case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (X,Y)
+    int X = opcode & 0x0F00 >> 8;
+    int Y = opcode & 0x00F0 >> 4;
+    int height = opcode & 0x000F;
+    V[0xF] = 0; //set collision flag to false by default
+    int vert;
+    int pixel;
+
+    for(int i = 0; i < height; i++){
+      vert = memory[I + i];
+      for(int j = 0; j < 8; j++){
+        pixel = vert & (0x80 >> j);
+        if(pixel != 0){
+          if(this->preipherals->gfx[Y + i][X + j] == 1){
+            V[0xF] = 1; //collision detected
+          }
+          this->preipherals->gfx[Y + i][X + j] ^= 1;
+        }
+      }
+    }
+    
     pc += 2;
+    this->peripherals->toUpdate = true;
     break;
+  }
 
   case 0xE000:
     switch(opcode & 0x000F){

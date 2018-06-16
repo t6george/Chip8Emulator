@@ -20,10 +20,11 @@ class Peripherals{
 
   public:
     bool running;
+    bool toUpdate;
 
     Peripherals();
     ~Peripherals();
-    void updateDisplay(bool toUpdate);
+    void updateDisplay();
     void generateSFX();
     void getInput();
 };

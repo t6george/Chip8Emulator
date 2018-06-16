@@ -47,7 +47,7 @@ Peripherals::~Peripherals(){
 }
 
 
-void Peripherals::updateDisplay(bool toUpdate){
+void Peripherals::updateDisplay(){
 
 	get_event = al_wait_for_event_until(event_queue, &event, &timeout);
 
@@ -64,7 +64,7 @@ void Peripherals::updateDisplay(bool toUpdate){
 				break;
 		}
 	}
-	if(toUpdate){
+	if(this -> toUpdate){
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 
 		for(int i = 0; i < 64; i++){
