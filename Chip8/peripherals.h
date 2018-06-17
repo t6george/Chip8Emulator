@@ -9,7 +9,6 @@ using namespace std;
 
 class Peripherals{
   private:
-    short**gfx;
     const float FPS;
     ALLEGRO_TIMER *timer;
     ALLEGRO_TIMEOUT timeout;
@@ -21,6 +20,7 @@ class Peripherals{
   public:
     bool running;
     bool toUpdate;
+    short**gfx;
 
     Peripherals();
     ~Peripherals();

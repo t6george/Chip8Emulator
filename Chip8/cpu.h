@@ -2,6 +2,12 @@
 #define CPU_H
 
 #include "peripherals.h"
+#include <iostream>
+#include <string>
+#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
+//#include "systemc.h"
 
 
 class Chip8Cpu{
@@ -18,11 +24,9 @@ class Chip8Cpu{
 
     unsigned char *keyInputs;
 
-    Peripherals *peripherals;
-
   public:
     Chip8Cpu();
-    void run();
+    void run(Peripherals& peripherals);
     void kernel();
     void loadFont();
     bool loadProgram(char* fileName);

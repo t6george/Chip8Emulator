@@ -1,9 +1,3 @@
-#include <iostream>
-#include <string>
-#include <cstdio>
-#include <stdlib.h>
-#include <stdio.h>
-//#include "systemc.h"
 #include "cpu.h"
 
 using namespace std;
@@ -20,7 +14,7 @@ Chip8Cpu::Chip8Cpu(){
     sp = 0;
 
     keyInputs = new unsigned char[16];
-    peripherals = new Peripherals();
+    
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -104,9 +98,9 @@ void Chip8Cpu::loadFont(){
   
 }
 
-void Chip8Cpu::run(){
+void Chip8Cpu::run(Peripherals& peripherals){
  unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
- cout << hex << opcode << endl;
+ cout << "opcode: " << hex << opcode << endl;
  switch(opcode & 0xF000){
    case 0x0000:
      switch(opcode & 0x000F){
@@ -132,9 +126,9 @@ void Chip8Cpu::run(){
     break;
   }
 
-  case 0x3000:
+  case 0x3000:{
     break;
-
+  }
   case 0x4000:
     break;
 
@@ -210,22 +204,21 @@ void Chip8Cpu::run(){
     V[0xF] = 0; //set collision flag to false by default
     int vert;
     int pixel;
-
     for(int i = 0; i < height; i++){
       vert = memory[I + i];
       for(int j = 0; j < 8; j++){
         pixel = vert & (0x80 >> j);
         if(pixel != 0){
-          if(this->preipherals->gfx[Y + i][X + j] == 1){
+          if(peripherals.gfx[Y + i][X + j] == 1){
             V[0xF] = 1; //collision detected
           }
-          this->preipherals->gfx[Y + i][X + j] ^= 1;
+          peripherals.gfx[Y + i][X + j] ^= 1;
         }
       }
     }
-    
+    peripherals.toUpdate = true;
+    peripherals.updateDisplay();
     pc += 2;
-    this->peripherals->toUpdate = true;
     break;
   }
 
@@ -295,12 +288,20 @@ void Chip8Cpu::kernel(){
 }
 
 int main(int argc, char* argv[]){
+  if (!al_init()) {
+		cerr << "Failed to initialize allegro." << endl;
+		return 1;
+	}
+
   Chip8Cpu* cpu = new Chip8Cpu();
-  //char *x = (char *)"pong.c8";
-  //cpu -> loadFont();
+  Peripherals* peripherals = new Peripherals();
+
+  cpu -> loadFont();
   cpu -> loadProgram((char *)"pong.c8");
-  cpu -> run();
-  cpu -> run();
+  
+  while (peripherals->running){
+    cpu -> run(*peripherals);
+  }
   return 0;
 }
 
@@ -320,6 +321,7 @@ int main(int argc, char* argv[]){
 //     sensitive << clk.pos(); //run func at positive clock edge
 //   }
 // }
+
 
 
 

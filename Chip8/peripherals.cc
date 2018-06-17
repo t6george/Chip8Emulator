@@ -1,20 +1,18 @@
 #include "peripherals.h"
-#include <iostream>
-#include <thread>
 
 //to compile: g++ peripherals.cc -F/Library/Frameworks/SDL2.framework/Headers -framework SDL2
  
 Peripherals::Peripherals(): FPS(60.0){
+	
   this->gfx = new short *[32];
-
   for(int i = 0; i < 32; i++){
       this->gfx[i] = new short[64];
       for(int j = 0; j < 64; j++){
         this->gfx[i][j] = 0;
       }
   }
-
 	this->timer = al_create_timer(1.0 / FPS);
+
 	if (!timer) {
 		cerr << "Failed to create timer." << endl;
 	}
@@ -52,21 +50,24 @@ void Peripherals::updateDisplay(){
 	get_event = al_wait_for_event_until(event_queue, &event, &timeout);
 
 	if (get_event) {
+cout << "fj" << endl;
 		switch (event.type) {
 			case ALLEGRO_EVENT_TIMER:
 				break;
-			case ALLEGRO_EVENT_DISPLAY_CLOSE:
+			case ALLEGRO_EVENT_DISPLAY_CLOSE:{
+				
 				this->running = false;
-				cout << "test" << endl;
 				break;
+			}
 			default:
 				cerr << "Unsupported event received." << endl;
 				break;
 		}
 	}
-	if(this -> toUpdate){
-		al_clear_to_color(al_map_rgb(0, 0, 0));
 
+	al_clear_to_color(al_map_rgb(0, 0, 0));
+
+	if(this->toUpdate){
 		for(int i = 0; i < 64; i++){
 			for(int j = 0; j < 32; j++){
 				if(this->gfx[j][i] == 1){
@@ -74,23 +75,19 @@ void Peripherals::updateDisplay(){
 				}
 			}
 		}
-
 		al_flip_display();
 	}
+	this->toUpdate = false;
 }
 
-int main(int argc, char*argv[]){
-	if (!al_init()) {
-		cerr << "Failed to initialize allegro." << endl;
-		return 1;
-	}
+// int main(int argc, char*argv[]){
 
-  Peripherals* peripheral = new Peripherals();
+//   Peripherals* peripheral = new Peripherals();
 
-	while(peripheral->running){
-		peripheral->updateDisplay();
-	}
+// 	while(peripheral->running){
+// 		peripheral->updateDisplay();
+// 	}
 
-  return 0;
-}
+//   return 0;
+// }
 
