@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-//#include "systemc.h"
-
 
 class Chip8Cpu{
   private:
@@ -28,7 +26,6 @@ class Chip8Cpu{
   public:
     Chip8Cpu();
     void run(Peripherals& peripherals);
-    void kernel();
     void loadFont();
     bool loadProgram(char* fileName);
     ~Chip8Cpu();
