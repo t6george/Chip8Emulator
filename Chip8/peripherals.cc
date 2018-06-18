@@ -47,33 +47,33 @@ Peripherals::~Peripherals(){
 
 void Peripherals::updateDisplay(){
 
-	get_event = al_wait_for_event_until(event_queue, &event, &timeout);
+	//get_event = al_wait_for_event_until(event_queue, &event, &timeout);
 
-	if (get_event) {
-cout << "fj" << endl;
-		switch (event.type) {
-			case ALLEGRO_EVENT_TIMER:
-				break;
-			case ALLEGRO_EVENT_DISPLAY_CLOSE:{
-				
-				this->running = false;
-				break;
-			}
-			default:
-				cerr << "Unsupported event received." << endl;
-				break;
-		}
-	}
+	// if (get_event) {
+	// 	switch (event.type) {
+	// 		case ALLEGRO_EVENT_TIMER:
+	// 			break;
+	// 		case ALLEGRO_EVENT_DISPLAY_CLOSE:{
+	// 			this->running = false;
+	// 			break;
+	// 		}
+	// 		default:
+	// 			cerr << "Unsupported event received." << endl;
+	// 			break;
+	// 	}
+	// }
 
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
 	if(this->toUpdate){
 		for(int i = 0; i < 64; i++){
 			for(int j = 0; j < 32; j++){
+				//cout << this->gfx[j][i];
 				if(this->gfx[j][i] == 1){
 					al_draw_filled_rectangle(i*20,j*20,i*20+20,j*20+20,al_map_rgb(255,255,255));
 				}
 			}
+			//cout << endl;
 		}
 		al_flip_display();
 	}

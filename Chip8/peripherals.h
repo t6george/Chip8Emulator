@@ -8,7 +8,7 @@ using namespace std;
 #define PERIPHERALS_H
 
 class Peripherals{
-  private:
+  public:
     const float FPS;
     ALLEGRO_TIMER *timer;
     ALLEGRO_TIMEOUT timeout;
@@ -17,7 +17,6 @@ class Peripherals{
     ALLEGRO_DISPLAY *display;
     bool get_event;
 
-  public:
     bool running;
     bool toUpdate;
     short**gfx;

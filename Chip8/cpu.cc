@@ -101,23 +101,29 @@ void Chip8Cpu::loadFont(){
 void Chip8Cpu::run(Peripherals& peripherals){
  unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
  cout << "opcode: " << hex << opcode << endl;
+//  if(opcode == 0xEE){
+//    peripherals.running = false;
+//  }
  switch(opcode & 0xF000){
-   case 0x0000:
-     switch(opcode & 0x000F){
-       case 0x0000:
-         break;
-       case 0x000E:
-         break;
-       default:
+  case 0x0000:
+    switch(opcode & 0x00FF){
+      case 0x00E0: //clear the screen 
         break;
-         //rca 1802 program
-       }
-     break;
+      case 0x00EE:{ //return from subroutine
+        sp--;
+        pc = (unsigned short)(stack[sp]+2);
+        break;
+      }
+      default: //Ox0NNN
+        break;
+        //rca 1802 program
+      }
+    break;
 
-   case 0x1000:
-     //jmp
-     break;
-
+  case 0x1000:{ //0x1NNN: jump to NNN
+    pc = (unsigned short)(opcode & 0x0FFF);
+    break;
+  }
   case 0x2000:{
     unsigned short address = (unsigned short)opcode & 0x0FFF;
     stack[sp] = pc; //save where program counter was at on the stack
@@ -126,7 +132,14 @@ void Chip8Cpu::run(Peripherals& peripherals){
     break;
   }
 
-  case 0x3000:{
+  case 0x3000:{ //0x3XNN: skips next opcode if VX == NN
+    unsigned short x = (opcode & 0x0F00) >> 8;
+    unsigned short nn = opcode & 0x00FF;
+    if(this -> V[x] == nn){
+      pc += 4;
+    }else{
+      pc += 2;
+    }   
     break;
   }
   case 0x4000:
@@ -198,8 +211,8 @@ void Chip8Cpu::run(Peripherals& peripherals){
     break;
 
   case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (X,Y)
-    int X = opcode & 0x0F00 >> 8;
-    int Y = opcode & 0x00F0 >> 4;
+    int X = V[(opcode & 0x0F00) >> 8];
+    int Y = V[(opcode & 0x00F0) >> 4];
     int height = opcode & 0x000F;
     V[0xF] = 0; //set collision flag to false by default
     int vert;
@@ -217,7 +230,6 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }
     }
     peripherals.toUpdate = true;
-    peripherals.updateDisplay();
     pc += 2;
     break;
   }
@@ -297,10 +309,29 @@ int main(int argc, char* argv[]){
   Peripherals* peripherals = new Peripherals();
 
   cpu -> loadFont();
-  cpu -> loadProgram((char *)"pong.c8");
+  cpu -> loadProgram((char *)"pong2.c8");
   
   while (peripherals->running){
+    peripherals -> get_event = al_wait_for_event_until(peripherals->event_queue, &(peripherals->event), &(peripherals->timeout));
+    if (peripherals -> get_event) {
+      switch (peripherals->event.type) {
+        case ALLEGRO_EVENT_TIMER:{
+          break;
+        }
+        case ALLEGRO_EVENT_DISPLAY_CLOSE:{
+          peripherals->running = false;
+          break;
+        }
+        default:{
+          cerr << "Unsupported event received." << endl;
+          break;
+        }
+      }
+    }
+    
+    peripherals -> updateDisplay();
     cpu -> run(*peripherals);
+    //usleep(1000000);
   }
   return 0;
 }

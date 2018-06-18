@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 //#include "systemc.h"
 
 
