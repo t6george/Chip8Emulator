@@ -245,40 +245,29 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
 
     case 0xF000:
-      switch(opcode & 0x000F){
-        case 0x0007:
+      switch(opcode & 0x00FF){ //0xFX33: store a binary-coded decimal V[X]'s digits in I, I+1, I+2
+        case 0x0033:{
+          int mem = V[(opcode & 0x0F00) >> 8];
+          memory[I] = (unsigned short)mem/100; //hundreds
+          memory[I+1] = (unsigned short)(mem/10)%10; //tens
+          memory[I+2] = (unsigned short)(mem%10); //ones
+          pc += 2;
           break;
-
-        case 0x000A:
-          break;
-
-        case 0x0005:
-          switch(opcode & 0x00F0){
-            case 0x0010:
-              break;
-            case 0x0050:
-              break;
-            case 0x0060:
-              break;
-
-            default:
-              cerr << "Opcode is not recognized!" << endl;
-              exit(1);
+        }
+        case 0x0065:{ //0xFX65: loads data to register V[0] to V[X] starting from mem address I
+          int bound = (opcode & 0x0F00) >> 8;
+          for(int i = 0; i < bound; i++){
+            V[i] = memory[I+i];
           }
+          pc += 2;
           break;
-
-        case 0x0008:
+        }
+        case 0x0029:{ //0xFX29: sets I to point to character sprite in V[X]
+          int character = V[(opcode & 0x0F00)  >> 8];
+          I = (unsigned short)(0x50 + 5*character);
+          pc += 2;
           break;
-
-        case 0x000E:
-          break;
-
-        case 0x0009:
-          break;
-
-        case 0x0003:
-          break;
-
+        }
         default:
           cerr << "Opcode is not recognized!" << endl;
           exit(1);
@@ -337,7 +326,6 @@ int main(int argc, char* argv[]){
     peripherals -> updateDisplay();
     cpu -> run(*peripherals);
   }
-  
   al_destroy_timer(timer);
   return 0;
 }
