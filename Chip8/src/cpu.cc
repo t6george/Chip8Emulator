@@ -2,6 +2,16 @@
 
 using namespace std;
 
+void Chip8Cpu::resetKeys(){
+  for(int i = 0; i < 16; i++){
+    this->keyInputs[i] = 0;
+  }
+}
+
+void Chip8Cpu::setKey(int ind){
+  this->keyInputs[ind] = 1;
+}
+
 Chip8Cpu::Chip8Cpu(){
     memory = new unsigned short[0x1000]; //4KB of RAM
     V = new unsigned short[16];        //16 8-bit registers
@@ -14,7 +24,7 @@ Chip8Cpu::Chip8Cpu(){
     sp = 0;
 
     keyInputs = new unsigned char[16];
-    
+    this->resetKeys();
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -126,7 +136,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       unsigned short address = (unsigned short)opcode & 0x0FFF;
       stack[sp] = pc; //save where program counter was at on the stack
       sp++; //increment stack
-      pc = address; //jumpt to NNN: address of desired subroutine
+      pc = address; //jump to NNN: address of desired subroutine
       break;
     }
 
@@ -295,6 +305,12 @@ int main(int argc, char* argv[]){
   if (!timer) {
 		cerr << "Failed to create timer." << endl;
 	}
+
+  if(!al_install_keyboard()) {
+    cerr << "failed to initialize the keyboard!" << endl;
+    return -1;
+  }
+
   al_register_event_source(peripherals->event_queue, al_get_timer_event_source(timer));
 
   cpu -> loadFont();
@@ -305,13 +321,85 @@ int main(int argc, char* argv[]){
   
   al_start_timer(timer);
 
-  while (peripherals->running){
+  al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
+  cout << "hhhh" << endl;
 
+  while (peripherals->running){
+    
     if (al_wait_for_event_until(peripherals->event_queue, &(peripherals->event), &(peripherals->timeout))) {
       switch (peripherals->event.type) {
         case ALLEGRO_EVENT_TIMER:{
           break;
         }
+        case ALLEGRO_EVENT_KEY_DOWN:{
+          switch(peripherals->event.keyboard.keycode) {
+            case ALLEGRO_KEY_1:
+              cpu -> setKey(1);
+              break;
+
+            case ALLEGRO_KEY_2:
+              cpu -> setKey(2);
+              break;
+
+            case ALLEGRO_KEY_3: 
+              cpu -> setKey(3);
+              break;
+
+            case ALLEGRO_KEY_4:
+              cpu -> setKey(4);
+              break;
+
+            case ALLEGRO_KEY_5:
+              cpu -> setKey(5);
+              break;
+
+            case ALLEGRO_KEY_6:
+              cpu -> setKey(6);
+              break;
+
+            case ALLEGRO_KEY_7: 
+              cpu -> setKey(7);
+              break;
+
+            case ALLEGRO_KEY_8:
+              cpu -> setKey(8);
+              break;
+            
+            case ALLEGRO_KEY_9:
+              cpu -> setKey(9);
+              break;
+            
+            case ALLEGRO_KEY_Q:
+              cpu -> setKey(0);
+              break;
+
+            case ALLEGRO_KEY_W:
+              cpu -> setKey(10);
+              break;
+
+            case ALLEGRO_KEY_E: 
+              cpu -> setKey(11);
+              break;
+
+            case ALLEGRO_KEY_R:
+              cpu -> setKey(12);
+              break;
+
+            case ALLEGRO_KEY_T:
+              cpu -> setKey(13);
+              break;
+
+            case ALLEGRO_KEY_Y:
+              cpu -> setKey(14);
+              break;
+
+            case ALLEGRO_KEY_U: 
+              cpu -> setKey(15);
+              break;
+          }
+          break;
+        }           
+
         case ALLEGRO_EVENT_DISPLAY_CLOSE:{
           peripherals->running = false;
           break;
@@ -325,6 +413,8 @@ int main(int argc, char* argv[]){
     
     peripherals -> updateDisplay();
     cpu -> run(*peripherals);
+    cpu -> resetKeys();
+    usleep(10000);
   }
   al_destroy_timer(timer);
   return 0;

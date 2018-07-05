@@ -15,6 +15,7 @@ class Peripherals{
     //ALLEGRO_TIMER *timer;
     ALLEGRO_TIMEOUT timeout;
 		ALLEGRO_EVENT event;
+    ALLEGRO_KEYBOARD_STATE *keyState;
     ALLEGRO_EVENT_QUEUE *event_queue;
     ALLEGRO_DISPLAY *display;
     bool running;
@@ -25,7 +26,6 @@ class Peripherals{
     void updateSignal(bool sig);
     void updateDisplay();
     void generateSFX();
-    void getInput();
 };
 
 #endif

@@ -27,6 +27,8 @@ class Chip8Cpu{
     Chip8Cpu();
     void run(Peripherals& peripherals);
     void loadFont();
+    void resetKeys();
+    void setKey(int ind);
     bool loadProgram(char* fileName);
     ~Chip8Cpu();
 };
