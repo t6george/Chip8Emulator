@@ -2,16 +2,6 @@
 
 using namespace std;
 
-void Chip8Cpu::resetKeys(){
-  for(int i = 0; i < 16; i++){
-    this->keyInputs[i] = 0;
-  }
-}
-
-void Chip8Cpu::setKey(int ind){
-  this->keyInputs[ind] = 1;
-}
-
 Chip8Cpu::Chip8Cpu(){
     memory = new unsigned short[0x1000]; //4KB of RAM
     V = new unsigned short[16];        //16 8-bit registers
@@ -25,6 +15,16 @@ Chip8Cpu::Chip8Cpu(){
 
     keyInputs = new unsigned char[16];
     this->resetKeys();
+}
+
+void Chip8Cpu::resetKeys(){
+  for(int i = 0; i < 16; i++){
+    this->keyInputs[i] = 0;
+  }
+}
+
+void Chip8Cpu::setKey(int ind){
+  this->keyInputs[ind] = 1;
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -113,7 +113,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
   cout << "opcode: " << hex << opcode << endl;
 
   switch(opcode & 0xF000){
-    case 0x0000:
+    case 0x0000:{
       switch(opcode & 0x00FF){
         case 0x00E0: //clear the screen 
           break;
@@ -127,6 +127,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
           //rca 1802 program
         }
       break;
+    }
 
     case 0x1000:{ //0x1NNN: jump to NNN
       pc = (unsigned short)(opcode & 0x0FFF);
@@ -170,7 +171,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
     }
 
-    case 0x8000:
+    case 0x8000:{
       switch(opcode & 0x000F){
         case 0x0000:
           break;
@@ -204,6 +205,8 @@ void Chip8Cpu::run(Peripherals& peripherals){
           exit(1);
       }
       break;
+    }
+
     case 0x9000:
       break;
 
@@ -215,9 +218,11 @@ void Chip8Cpu::run(Peripherals& peripherals){
     case 0xB000:
       break;
 
-    case 0xC000:
+    case 0xC000:{ //0xCXNN: set V[X] to a random number & NN
+      V[(opcode & 0x0F00) >> 8] = (unsigned short) ((opcode & 0x0FF) & rand()%256);
+      pc += 2;
       break;
-
+    }
     case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (X,Y)
       int X = V[(opcode & 0x0F00) >> 8];
       int Y = V[(opcode & 0x00F0) >> 4];
@@ -242,20 +247,46 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
     }
 
-    case 0xE000:
-      switch(opcode & 0x000F){
-        case 0x000E:
+    case 0xE000:{
+      switch(opcode & 0x00FF){
+        case 0x009E:{ //0xEX9E: skip next instruction if key V[X] is pressed
+          int key = (opcode & 0x0F00) >> 8;
+          if(this -> keyInputs[key] == 1){
+            pc += 4;
+          }else{
+            pc += 2;
+          }
           break;
-        case 0x0001:
+        }
+        case 0x00A1:{//0xEXA1: skip next instruction if key V[X] is not pressed
+          int key = (opcode & 0x0F00) >> 8;
+          if(this -> keyInputs[key] == 0){
+            pc += 4;
+          }else{
+            pc += 2;
+          }
           break;
-        default:
+        }    
+        default:{
           cerr << "Opcode is not recognized!" << endl;
-        exit(1);   
+          exit(1); 
+        }  
       }
       break;
+    }
 
-    case 0xF000:
+    case 0xF000:{
       switch(opcode & 0x00FF){ //0xFX33: store a binary-coded decimal V[X]'s digits in I, I+1, I+2
+        case 0x0007:{ //0xFX07 : set V[x] to delay timer
+          V[(opcode & 0x0F00) >> 8] = (unsigned short) this -> delay_timer;
+          pc += 2;
+          break;
+        }
+        case 0x0015:{ //0xFX15: set delay timer to V[x]
+          this -> delay_timer = V[(opcode & 0x0F00) >> 8];
+          pc += 2;
+          break;
+        }
         case 0x0033:{
           int mem = V[(opcode & 0x0F00) >> 8];
           memory[I] = (unsigned short)mem/100; //hundreds
@@ -278,18 +309,14 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        default:
+        default:{
           cerr << "Opcode is not recognized!" << endl;
           exit(1);
+        }
       }
-    
       break;
-
-    default:
-      cerr << "Opcode is not recognized!" << endl;
-      exit(1);
     }
-
+  }
 }
 
 int main(int argc, char* argv[]){
@@ -322,7 +349,6 @@ int main(int argc, char* argv[]){
   al_start_timer(timer);
 
   al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
-  cout << "hhhh" << endl;
 
   while (peripherals->running){
     
@@ -405,7 +431,6 @@ int main(int argc, char* argv[]){
           break;
         }
         default:{
-          cerr << "Unsupported event received." << endl;
           break;
         }
       }
@@ -414,7 +439,7 @@ int main(int argc, char* argv[]){
     peripherals -> updateDisplay();
     cpu -> run(*peripherals);
     cpu -> resetKeys();
-    usleep(10000);
+    //usleep(120000);
   }
   al_destroy_timer(timer);
   return 0;

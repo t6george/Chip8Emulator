@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cstdlib>
 #include <unistd.h>
 
 class Chip8Cpu{
