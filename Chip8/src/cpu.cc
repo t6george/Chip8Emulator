@@ -19,7 +19,7 @@ Chip8Cpu::Chip8Cpu(){
 
 void Chip8Cpu::resetKeys(){
   for(int i = 0; i < 16; i++){
-    this->keyInputs[i] = 0;
+    this->keyInputs[i] = 1;
   }
 }
 
@@ -115,8 +115,15 @@ void Chip8Cpu::run(Peripherals& peripherals){
   switch(opcode & 0xF000){
     case 0x0000:{
       switch(opcode & 0x00FF){
-        case 0x00E0: //clear the screen 
+        case 0x00E0:{ //0x00E0: clear the screen 
+          for(int i = 0; i < 32; i++){
+            for(int j = 0; j < 64; j++){
+              peripherals.gfx[i][j] = 0;
+            }
+          }
+          pc += 2;
           break;
+        }
         case 0x00EE:{ //return from subroutine
           sp--;
           pc = (unsigned short)(stack[sp]+2);
@@ -133,7 +140,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       pc = (unsigned short)(opcode & 0x0FFF);
       break;
     }
-    case 0x2000:{
+    case 0x2000:{ //0x2NNN: call subroutine at address NNN
       unsigned short address = (unsigned short)(opcode & 0x0FFF);
       stack[sp] = pc; //save where program counter was at on the stack
       sp++; //increment stack
@@ -142,9 +149,9 @@ void Chip8Cpu::run(Peripherals& peripherals){
     }
 
     case 0x3000:{ //0x3XNN: skips next opcode if VX == NN
-      unsigned short x = (opcode & 0x0F00) >> 8;
-      unsigned short nn = opcode & 0x00FF;
-      if(this -> V[x] == nn){
+      unsigned short X = (opcode & 0x0F00) >> 8;
+      unsigned short NN = opcode & 0x00FF;
+      if(this -> V[X] == NN){
         pc += 4;
       }else{
         pc += 2;
@@ -152,46 +159,69 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
     }
     case 0x4000:{ //0x4XNN: skip the next instruction if VX != NN
-      if(V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)){
+      unsigned short X = (opcode & 0x0F00) >> 8;
+      unsigned short NN = opcode & 0x00FF;
+      if(this -> V[X] != NN){
+        pc += 4;
+      }else{
+        pc += 2;
+      }   
+      break;
+    }
+    case 0x5000:{ //0x5XY0: skip next instruction if VX == VY
+      unsigned short X = (opcode & 0x0F00) >> 8;
+      unsigned short Y = (opcode & 0x00F0) >> 4;
+      if(this -> V[X] == this -> V[Y]){
         pc += 4;
       }else{
         pc += 2;
       }
       break;
     }
-    case 0x5000:
-      break;
-
     case 0x6000:{ //0x6XNN: set VX to NN
-      int ind = (opcode & 0x0F00) >> 8;
-      V[ind] = (unsigned short)(opcode & 0x00FF); //set register N to NN (8 bits)
-      pc += 2; //advance program counter to next opcode
+      int X = (opcode & 0x0F00) >> 8;
+      V[X] = (unsigned short)(opcode & 0x00FF); //set register X to NN (8 bits)
+      pc += 2; 
       break;
     }
-    case 0x7000:{
-      int ind = (opcode & 0x0F00) >> 8;
-      int toAdd = opcode & 0x00FF;
-      V[ind] = (unsigned short)((V[ind] + toAdd) & 0xFF);
+    case 0x7000:{ // 0x7XNN: adds NN to VX
+      int X = (opcode & 0x0F00) >> 8;
+      int NN = opcode & 0x00FF;
+      V[X] = (unsigned short)((V[X] + NN) & 0xFF);
       pc += 2;
       break;
     }
 
     case 0x8000:{
       switch(opcode & 0x000F){
-        case 0x0000:
-          break;
-
-        case 0x0001:
-          break;
-
-        case 0x0002:{ //0x8XY2: sets VX to VX & VY
-          V[(opcode & 0x0F00) >> 8] = (unsigned short)(V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4]);
+        case 0x0000:{ // 0x8XY0: set VX to VY
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          V[X] = V[Y];
           pc += 2;
           break;
         }
-        case 0x0003:
+        case 0x0001:{ //0x8XY1: set VX to VX OR VY
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          V[X] = (unsigned short)(V[X] | V[Y]);
+          pc += 2;
           break;
-
+        }
+        case 0x0002:{ //0x8XY2: sets VX to VX & VY
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          V[Y] = (unsigned short)(V[X] & V[Y]);
+          pc += 2;
+          break;
+        }
+        case 0x0003:{ //0x8XY3: set VX to VX XOR VY
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          V[Y] = (unsigned short)(V[X] ^ V[Y]);
+          pc += 2;
+          break;
+        }
         case 0x0004:{ //0x8XY4: add VX and VY into VX and save carry into VF
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;  
@@ -267,6 +297,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       switch(opcode & 0x00FF){
         case 0x009E:{ //0xEX9E: skip next instruction if key V[X] is pressed
           int key = V[(opcode & 0x0F00) >> 8];
+          exit(0);
           if(this -> keyInputs[key] == 1){
             pc += 4;
           }else{
@@ -275,7 +306,9 @@ void Chip8Cpu::run(Peripherals& peripherals){
           break;
         }
         case 0x00A1:{//0xEXA1: skip next instruction if key V[X] is not pressed
-          int key = (opcode & 0x0F00) >> 8;
+          int key = V[(opcode & 0x0F00) >> 8];
+          //cout << "keypressed: " << key << endl;
+
           if(this -> keyInputs[key] == 0){
             pc += 4;
           }else{
@@ -294,7 +327,6 @@ void Chip8Cpu::run(Peripherals& peripherals){
     case 0xF000:{
       switch(opcode & 0x00FF){ //0xFX33: store a binary-coded decimal V[X]'s digits in I, I+1, I+2
         case 0x0007:{ //0xFX07 : set V[x] to delay timer
-          cout << "V[" << ((opcode & 0x0F00) >> 8) << "] = " << V[(opcode & 0x0F00) >> 8] << " set to " << this -> delay_timer << endl;
           V[(opcode & 0x0F00) >> 8] = (unsigned short) this -> delay_timer;
           pc += 2;
           //break;
@@ -469,11 +501,11 @@ int main(int argc, char* argv[]){
         }
       }
     }
-    
-    peripherals -> updateDisplay();
     cpu -> run(*peripherals);
+    peripherals -> updateDisplay();
+    
     cpu -> resetKeys();
-    usleep(40000);
+    usleep(10000);
   }
   al_destroy_timer(timer);
   return 0;
