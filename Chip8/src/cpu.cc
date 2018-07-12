@@ -19,7 +19,7 @@ Chip8Cpu::Chip8Cpu(){
 
 void Chip8Cpu::resetKeys(){
   for(int i = 0; i < 16; i++){
-    this->keyInputs[i] = 1;
+    this->keyInputs[i] = 0;
   }
 }
 
@@ -49,7 +49,7 @@ bool Chip8Cpu::loadProgram(char* fileName){
 
   // Allocate memory to store rom
   char* rom_buffer = new char[rom_size];
-  //char* rom_buffer = (char*) malloc(sizeof(char) * rom_size);
+
   if (rom_buffer == NULL) {
       cerr << "Failed to allocate memory for ROM" << endl;
       return false;
@@ -110,7 +110,7 @@ void Chip8Cpu::loadFont(){
 
 void Chip8Cpu::run(Peripherals& peripherals){
   unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
-  cout << "opcode: " << hex << opcode << endl;
+  cout << "opcode: 0x" << hex << opcode << endl;
 
   switch(opcode & 0xF000){
     case 0x0000:{
@@ -141,10 +141,9 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
     }
     case 0x2000:{ //0x2NNN: call subroutine at address NNN
-      unsigned short address = (unsigned short)(opcode & 0x0FFF);
       stack[sp] = pc; //save where program counter was at on the stack
       sp++; //increment stack
-      pc = address; //jump to NNN: address of desired subroutine
+      pc = (unsigned short)(opcode & 0x0FFF); //jump to NNN: address of desired subroutine
       break;
     }
 
@@ -234,18 +233,46 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        case 0x0005:
+        case 0x0005:{ //0x8XY5: perform VX-VY and set VF to complimented carry
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          if (V[Y] > V[X]){
+            V[0xF] = 0;
+          }else{
+            V[0xF] = 1;
+          }
+          V[X] = (unsigned short)(V[X] - V[Y]);
+          pc += 2;
           break;
-
-        case 0x0006:
+        }
+        case 0x0006:{ //0x8XY6: shift VX 1 bit to the right (do not change VY)
+                      //save LSB in VF before the shift
+          int X = (opcode & 0x0F00) >> 8;
+          V[0xF] = V[X] & 0x1;
+          V[X] >>= 1;
+          pc += 2;
           break;
-
-        case 0x0007:
+        }
+        case 0x0007:{//0x8XY7: perform VY-VX and set VF to complimented carry
+          int X = (opcode & 0x0F00) >> 8;
+          int Y = (opcode & 0x00F0) >> 4;
+          if (V[X] > V[Y]){
+            V[0xF] = 0;
+          }else{
+            V[0xF] = 1;
+          }
+          V[X] = (unsigned short)(V[Y] - V[X]);
+          pc += 2;
           break;
-        
-        case 0x000E:
+        }
+        case 0x000E:{//0x8XY6: shift VX 1 bit to the left (do not change VY)
+                      //save MSB in VF before the shift
+          int X = (opcode & 0x0F00) >> 8;
+          V[0xF] = V[X] & 0x80;
+          V[X] <<= 1;
+          pc += 2;
           break;
-      
+        }
         default:
           cerr << "Opcode is not recognized!" << endl;
           exit(1);
@@ -253,19 +280,30 @@ void Chip8Cpu::run(Peripherals& peripherals){
       break;
     }
  
-    case 0x9000:
+    case 0x9000:{ // 0x9XY0: skip next instruction if VX != VY
+      unsigned short X = (opcode & 0x0F00) >> 8;
+      unsigned short Y = (opcode & 0x00F0) >> 4;
+      if(this -> V[X] != this -> V[Y]){
+        pc += 4;
+      }else{
+        pc += 2;
+      }
       break;
-
+    }
     case 0xA000:{
       this->I = (unsigned short)(opcode & 0x0FFF); //set address pointer to NNN
       pc += 2; //advance to next opcode
       break;
     }
-    case 0xB000:
+    case 0xB000:{ //0xBNNN: jump to V0 + NNN
+      int NNN = opcode & 0x0FFF;
+      pc = (unsigned short)(NNN + V[0]);
       break;
-
+    }
     case 0xC000:{ //0xCXNN: set V[X] to a random number & NN
-      V[(opcode & 0x0F00) >> 8] = (unsigned short) ((opcode & 0x00FF) & rand()%256);
+      int X = (opcode & 0x0F00) >> 8;
+      int NN = opcode & 0x00FF;
+      V[X] = (unsigned short) (NN & rand()%256);
       pc += 2;
       break;
     }
