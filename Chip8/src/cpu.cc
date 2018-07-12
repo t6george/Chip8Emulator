@@ -224,7 +224,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
         case 0x0004:{ //0x8XY4: add VX and VY into VX and save carry into VF
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;  
-          if(V[X] > 255 - V[Y]){ //check for overflow
+          if(V[X] > 0xFF - V[Y]){ //check for overflow
             V[0xF] = 1;
           }else{
             V[0xF] = 0;
@@ -380,11 +380,31 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
+        case 0x001E:{ //0xFX1E: set I to VX + I and VF is set to the overflow
+          int X = (opcode & 0x0F00) >> 8;
+          if(V[X] + this -> I > 0x0FFF){
+            V[0xF] = 1;
+          }else{
+            V[0xF] = 0;
+          }
+          this -> I = this -> I + V[X];
+          pc += 2;
+          break;
+        }
         case 0x0033:{
           int mem = V[(opcode & 0x0F00) >> 8];
           memory[I] = (unsigned short)mem/100; //hundreds
           memory[I+1] = (unsigned short)(mem/10)%10; //tens
           memory[I+2] = (unsigned short)(mem%10); //ones
+          pc += 2;
+          break;
+        }
+        case 0x0055:{ //0xFX55: stores V0 to VX in memory starting at address I
+          int X = (opcode & 0x0F00) >> 8;
+          for(int i = 0; i < X; i++){
+            this->memory[this -> I+i] = this -> V[i];
+          }
+          this -> I = this -> I + X + 1;
           pc += 2;
           break;
         }
@@ -394,6 +414,12 @@ void Chip8Cpu::run(Peripherals& peripherals){
             V[i] = memory[I+i];
           }
           this -> I = (unsigned short)(this -> I + bound + 1);
+          pc += 2;
+          break;
+        }
+        case 0x0018:{ //0xFX15: set sound timer to VX
+          int X = (opcode & 0x0F00) >> 8;
+          this -> sound_timer = V[X];
           pc += 2;
           break;
         }
@@ -543,7 +569,7 @@ int main(int argc, char* argv[]){
     peripherals -> updateDisplay();
     
     cpu -> resetKeys();
-    usleep(10000);
+    usleep(200);
   }
   al_destroy_timer(timer);
   return 0;
