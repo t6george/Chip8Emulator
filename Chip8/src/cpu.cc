@@ -3,28 +3,28 @@
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned short[0x1000]; //4KB of RAM
-    V = new unsigned short[16];        //16 8-bit registers
-    I = 0x0;
-    pc = 0x200;
-    delay_timer = 0;  //operates at 60Hz
+    memory = new unsigned short[0x1000];    //4KB of program memory
+    V = new unsigned short[16];             //16 8-bit registers
+    I = 0x0;                                //memory address register default
+    pc = 0x0200;                            //load rom at this starting address
+    delay_timer = 0;                        
     sound_timer = 0;
 
-    stack = new unsigned short[16]; //stack of return addresses after subroutines
-    sp = 0;
+    stack = new unsigned short[16];         //stack of return addresses after subroutines
+    sp = 0;                                 //stack initially is empty
 
     keyInputs = new unsigned char[16];
-    this->resetKeys();
+    for(int i = 0; i < 16; i++){
+      keyInputs[i] = 0;
+    }
 }
 
-void Chip8Cpu::resetKeys(){
-  for(int i = 0; i < 16; i++){
-    this->keyInputs[i] = 0;
-  }
+void Chip8Cpu::resetKey(int ind){
+  this->keyInputs[ind] = 0;                 //set key to unpressed state
 }
 
 void Chip8Cpu::setKey(int ind){
-  this->keyInputs[ind] = 1;
+  this->keyInputs[ind] = 1;                 //set key to pressed state
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -37,15 +37,14 @@ Chip8Cpu::~Chip8Cpu(){
 bool Chip8Cpu::loadProgram(char* fileName){
   cout << "Loading ROM..." << endl;
 
-  FILE* rom = fopen(fileName, "rb");
+  FILE* rom = fopen(fileName, "rb");    //open binary rom file for read only
   if (nullptr == rom) {
     cerr << "Failed to open ROM" << endl;
     return false;
   }
-    // Get file size
-  fseek(rom, 0, SEEK_END);
-  long rom_size = ftell(rom);
-  rewind(rom);
+  fseek(rom, 0, SEEK_END);              //move position indicator to eof
+  long rom_size = ftell(rom);           //get position indicator (which is file size)
+  rewind(rom);                          //reset position indicator back to the beginning
 
   // Allocate memory to store rom
   char* rom_buffer = new char[rom_size];
@@ -56,18 +55,16 @@ bool Chip8Cpu::loadProgram(char* fileName){
   }
 
   // Copy ROM into buffer
-  size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom);
+  size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom); //read and store rom in temporary buffer
   if (result != rom_size) {
       cerr << "Failed to read ROM" << endl;
       return false;
   }
 
-  // Copy buffer to memory
-  if ((0x1000-0x200) > rom_size){
+  
+  if ((0x1000-0x200) > rom_size){               // Copy buffer to memory
       for (int i = 0; i < rom_size; ++i) {
-          memory[0x200 + i] = (uint8_t)rom_buffer[i];   // Load into memory starting
-                                                      // at 0x200 (=512)
-                                                      //cout << hex << memory[0x200 + i] << endl;
+          memory[0x0200 + i] = (uint8_t)rom_buffer[i];   
       }
   }
   else {
@@ -105,7 +102,7 @@ void Chip8Cpu::loadFont(){
   for(int i = 0; i < 80; i++){
     memory[0x50 + i] = (unsigned short)((fontset[i]) & 0xFF);
   }
-  
+  cout << "Fontset is loaded" << endl;
 }
 
 void Chip8Cpu::run(Peripherals& peripherals){
@@ -115,7 +112,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
   switch(opcode & 0xF000){
     case 0x0000:{
       switch(opcode & 0x00FF){
-        case 0x00E0:{ //0x00E0: clear the screen 
+        case 0x00E0:{                   //0x00E0: clear the screen 
           for(int i = 0; i < 32; i++){
             for(int j = 0; j < 64; j++){
               peripherals.gfx[i][j] = 0;
@@ -124,30 +121,32 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        case 0x00EE:{ //return from subroutine
+        case 0x00EE:{                   //return from subroutine
           sp--;
           pc = (unsigned short)(stack[sp]+2);
           break;
         }
-        default: //Ox0NNN
+        default:{
+          cout << "----------------Unknown Opcode----------------" << endl;
+          exit(1);
           break;
-          //rca 1802 program
         }
+      }
       break;
     }
 
-    case 0x1000:{ //0x1NNN: jump to NNN
+    case 0x1000:{                                     //0x1NNN: jump to NNN
       pc = (unsigned short)(opcode & 0x0FFF);
       break;
     }
-    case 0x2000:{ //0x2NNN: call subroutine at address NNN
-      stack[sp] = pc; //save where program counter was at on the stack
-      sp++; //increment stack
-      pc = (unsigned short)(opcode & 0x0FFF); //jump to NNN: address of desired subroutine
+    case 0x2000:{                                     //0x2NNN: call subroutine at address NNN
+      stack[sp] = pc;                                 //save where program counter was at on the stack
+      sp++;                             
+      pc = (unsigned short)(opcode & 0x0FFF);         //jump to NNN: address of desired subroutine
       break;
     }
 
-    case 0x3000:{ //0x3XNN: skips next opcode if VX == NN
+    case 0x3000:{                                     //0x3XNN: skips next opcode if VX == NN
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short NN = opcode & 0x00FF;
       if(this -> V[X] == NN){
@@ -157,7 +156,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }   
       break;
     }
-    case 0x4000:{ //0x4XNN: skip the next instruction if VX != NN
+    case 0x4000:{                                     //0x4XNN: skip the next instruction if VX != NN
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short NN = opcode & 0x00FF;
       if(this -> V[X] != NN){
@@ -167,7 +166,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }   
       break;
     }
-    case 0x5000:{ //0x5XY0: skip next instruction if VX == VY
+    case 0x5000:{                                     //0x5XY0: skip next instruction if VX == VY
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short Y = (opcode & 0x00F0) >> 4;
       if(this -> V[X] == this -> V[Y]){
@@ -177,13 +176,13 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }
       break;
     }
-    case 0x6000:{ //0x6XNN: set VX to NN
+    case 0x6000:{                                     //0x6XNN: set VX to NN
       int X = (opcode & 0x0F00) >> 8;
-      V[X] = (unsigned short)(opcode & 0x00FF); //set register X to NN (8 bits)
+      V[X] = (unsigned short)(opcode & 0x00FF);       
       pc += 2; 
       break;
     }
-    case 0x7000:{ // 0x7XNN: adds NN to VX
+    case 0x7000:{                                     //0x7XNN: adds NN to VX
       int X = (opcode & 0x0F00) >> 8;
       int NN = opcode & 0x00FF;
       V[X] = (unsigned short)((V[X] + NN) & 0xFF);
@@ -193,43 +192,43 @@ void Chip8Cpu::run(Peripherals& peripherals){
 
     case 0x8000:{
       switch(opcode & 0x000F){
-        case 0x0000:{ // 0x8XY0: set VX to VY
+        case 0x0000:{                                 //0x8XY0: set VX to VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = V[Y];
           pc += 2;
           break;
         }
-        case 0x0001:{ //0x8XY1: set VX to VX OR VY
+        case 0x0001:{                                 //0x8XY1: set VX to VX | VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = (unsigned short)(V[X] | V[Y]);
           pc += 2;
           break;
         }
-        case 0x0002:{ //0x8XY2: sets VX to VX & VY
+        case 0x0002:{                                 //0x8XY2: sets VX to VX & VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
-          V[Y] = (unsigned short)(V[X] & V[Y]);
+          V[X] = (unsigned short)(V[X] & V[Y]);
           pc += 2;
           break;
         }
-        case 0x0003:{ //0x8XY3: set VX to VX XOR VY
+        case 0x0003:{                                 //0x8XY3: set VX to VX ^ VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
-          V[Y] = (unsigned short)(V[X] ^ V[Y]);
+          V[X] = (unsigned short)(V[X] ^ V[Y]);
           pc += 2;
           break;
         }
-        case 0x0004:{ //0x8XY4: add VX and VY into VX and save carry into VF
+        case 0x0004:{                                 //0x8XY4: add VX and VY into VX and save carry into VF
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;  
-          if(V[X] > 0xFF - V[Y]){ //check for overflow
+          if(V[X] > 0xFF - V[Y]){                     //check for overflow
             V[0xF] = 1;
           }else{
             V[0xF] = 0;
           }
-          V[X] = (unsigned short)((V[X] + V[Y]) & 0xFF); //truncate addition
+          V[X] = (unsigned short)((V[X] + V[Y]) & 0xFF); //truncate addition to 8 bits
           pc += 2;
           break;
         }
@@ -268,7 +267,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
         case 0x000E:{//0x8XY6: shift VX 1 bit to the left (do not change VY)
                       //save MSB in VF before the shift
           int X = (opcode & 0x0F00) >> 8;
-          V[0xF] = V[X] & 0x80;
+          V[0xF] = V[X] >> 7;
           V[X] <<= 1;
           pc += 2;
           break;
@@ -307,7 +306,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
       pc += 2;
       break;
     }
-    case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (X,Y)
+    case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (VX,VY)
       int X = V[(opcode & 0x0F00) >> 8];
       int Y = V[(opcode & 0x00F0) >> 4];
       int height = opcode & 0x000F;
@@ -345,8 +344,6 @@ void Chip8Cpu::run(Peripherals& peripherals){
         }
         case 0x00A1:{//0xEXA1: skip next instruction if key V[X] is not pressed
           int key = V[(opcode & 0x0F00) >> 8];
-          //cout << "keypressed: " << key << endl;
-
           if(this -> keyInputs[key] == 0){
             pc += 4;
           }else{
@@ -377,6 +374,21 @@ void Chip8Cpu::run(Peripherals& peripherals){
         case 0x0029:{ //0xFX29: sets I to point to character sprite in V[X]
           int character = V[(opcode & 0x0F00)  >> 8];
           I = (unsigned short)(0x50 + 5 * character);
+          pc += 2;
+          break;
+        }
+        case 0x000A:{         //0xFX0A: await a keypress and store in VX
+          int X = (opcode & 0x0F00) >> 8;
+          bool pressed = false;
+          for(int i = 0; i < 16; i++){
+            if(this -> keyInputs[i] == 1){
+              pressed = true;
+              V[X] = i;
+            }
+          }
+          if(!pressed){
+            return;
+          }
           pc += 2;
           break;
         }
@@ -474,88 +486,171 @@ int main(int argc, char* argv[]){
         case ALLEGRO_EVENT_KEY_DOWN:{
           switch(peripherals->event.keyboard.keycode) {
             case ALLEGRO_KEY_1:
-              cpu -> setKey(1);
+              cpu -> setKey(0x1);
               cout << "                    1" << endl;
               break;
 
             case ALLEGRO_KEY_2:
-              cpu -> setKey(2);
+              cpu -> setKey(0x2);
               cout << "                    2" << endl;
               break;
 
             case ALLEGRO_KEY_3: 
-              cpu -> setKey(3);
+              cpu -> setKey(0x3);
               cout << "                    3" << endl;
               break;
 
             case ALLEGRO_KEY_4:
-              cpu -> setKey(4);
+              cpu -> setKey(0x4);
               cout << "                    4" << endl;
               break;
 
             case ALLEGRO_KEY_5:
-              cpu -> setKey(5);
+              cpu -> setKey(0x5);
               cout << "                    5" << endl;
               break;
 
             case ALLEGRO_KEY_6:
-              cpu -> setKey(6);
+              cpu -> setKey(0x6);
               cout << "                    6" << endl;
               break;
 
             case ALLEGRO_KEY_7: 
-              cpu -> setKey(7);
+              cpu -> setKey(0x7);
               cout << "                    7" << endl;
               break;
 
             case ALLEGRO_KEY_8:
-              cpu -> setKey(8);
+              cpu -> setKey(0x8);
               cout << "                    8" << endl;
               break;
             
             case ALLEGRO_KEY_9:
-              cpu -> setKey(9);
+              cpu -> setKey(0x9);
               cout << "                    9"<< endl;
               break;
             
             case ALLEGRO_KEY_Q:
-              cpu -> setKey(0);
+              cpu -> setKey(0x0);
               cout << "                    Q"<< endl;
               break;
 
             case ALLEGRO_KEY_W:
-              cpu -> setKey(10);
+              cpu -> setKey(0xA);
               cout << "                    W"<< endl;
               break;
 
             case ALLEGRO_KEY_E: 
-              cpu -> setKey(11);
+              cpu -> setKey(0xB);
               cout << "                    E"<< endl;
               break;
 
             case ALLEGRO_KEY_R:
-              cpu -> setKey(12);
+              cpu -> setKey(0xC);
               cout << "                    R"<< endl;
               break;
 
             case ALLEGRO_KEY_T:
-              cpu -> setKey(13);
+              cpu -> setKey(0xD);
               cout << "                    T"<< endl;
               break;
 
             case ALLEGRO_KEY_Y:
-              cpu -> setKey(14);
+              cpu -> setKey(0xE);
               cout << "                    Y"<< endl;
               break;
 
             case ALLEGRO_KEY_U: 
-              cpu -> setKey(15);
+              cpu -> setKey(0xF);
               cout << "                    U"<< endl;
               break;
           }
           break;
         }           
+        case ALLEGRO_EVENT_KEY_UP:{
+          switch(peripherals->event.keyboard.keycode) {
+            case ALLEGRO_KEY_1:
+              cpu -> resetKey(0x1);
+              cout << "                    1" << endl;
+              break;
 
+            case ALLEGRO_KEY_2:
+              cpu -> resetKey(0x2);
+              cout << "                    2" << endl;
+              break;
+
+            case ALLEGRO_KEY_3: 
+              cpu -> resetKey(0x3);
+              cout << "                    3" << endl;
+              break;
+
+            case ALLEGRO_KEY_4:
+              cpu -> resetKey(0x4);
+              cout << "                    4" << endl;
+              break;
+
+            case ALLEGRO_KEY_5:
+              cpu -> resetKey(0x5);
+              cout << "                    5" << endl;
+              break;
+
+            case ALLEGRO_KEY_6:
+              cpu -> resetKey(0x6);
+              cout << "                    6" << endl;
+              break;
+
+            case ALLEGRO_KEY_7: 
+              cpu -> resetKey(0x7);
+              cout << "                    7" << endl;
+              break;
+
+            case ALLEGRO_KEY_8:
+              cpu -> resetKey(0x8);
+              cout << "                    8" << endl;
+              break;
+            
+            case ALLEGRO_KEY_9:
+              cpu -> resetKey(0x9);
+              cout << "                    9"<< endl;
+              break;
+            
+            case ALLEGRO_KEY_Q:
+              cpu -> resetKey(0x0);
+              cout << "                    Q"<< endl;
+              break;
+
+            case ALLEGRO_KEY_W:
+              cpu -> resetKey(0xA);
+              cout << "                    W"<< endl;
+              break;
+
+            case ALLEGRO_KEY_E: 
+              cpu -> resetKey(0xB);
+              cout << "                    E"<< endl;
+              break;
+
+            case ALLEGRO_KEY_R:
+              cpu -> resetKey(0xC);
+              cout << "                    R"<< endl;
+              break;
+
+            case ALLEGRO_KEY_T:
+              cpu -> resetKey(0xD);
+              cout << "                    T"<< endl;
+              break;
+
+            case ALLEGRO_KEY_Y:
+              cpu -> resetKey(0xE);
+              cout << "                    Y"<< endl;
+              break;
+
+            case ALLEGRO_KEY_U: 
+              cpu -> resetKey(0xF);
+              cout << "                    U"<< endl;
+              break;
+          }
+          break;
+        }  
         case ALLEGRO_EVENT_DISPLAY_CLOSE:{
           peripherals->running = false;
           break;
@@ -567,9 +662,7 @@ int main(int argc, char* argv[]){
     }
     cpu -> run(*peripherals);
     peripherals -> updateDisplay();
-    
-    cpu -> resetKeys();
-    usleep(200);
+    usleep(4000);
   }
   al_destroy_timer(timer);
   return 0;

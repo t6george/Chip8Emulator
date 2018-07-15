@@ -22,13 +22,14 @@ class Chip8Cpu{
     unsigned short *stack; 
     unsigned int sp;
 
-    unsigned char *keyInputs;
+    
 
   public:
+    unsigned char *keyInputs; //TODO: make private
     Chip8Cpu();
     void run(Peripherals& peripherals);
     void loadFont();
-    void resetKeys();
+    void resetKey(int ind);
     void setKey(int ind);
     bool loadProgram(char* fileName);
     ~Chip8Cpu();
