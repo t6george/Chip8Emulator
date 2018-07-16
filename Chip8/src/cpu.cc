@@ -3,15 +3,15 @@
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned short[0x1000];    //4KB of program memory
-    V = new unsigned short[16];             //16 8-bit registers
-    I = 0x0;                                //memory address register default
-    pc = 0x0200;                            //load rom at this starting address
+    memory = new unsigned short[0x1000];                      //4KB of program memory
+    V = new unsigned short[16];                               //16 8-bit registers
+    I = 0x0;                                                  //memory address register default
+    pc = 0x0200;                                              //load rom at this starting address
     delay_timer = 0;                        
     sound_timer = 0;
 
-    stack = new unsigned short[16];         //stack of return addresses after subroutines
-    sp = 0;                                 //stack initially is empty
+    stack = new unsigned short[16];                           //stack of return addresses after subroutines
+    sp = 0;                                                   //stack initially is empty
 
     keyInputs = new unsigned char[16];
     for(int i = 0; i < 16; i++){
@@ -20,11 +20,11 @@ Chip8Cpu::Chip8Cpu(){
 }
 
 void Chip8Cpu::resetKey(int ind){
-  this->keyInputs[ind] = 0;                 //set key to unpressed state
+  this->keyInputs[ind] = 0;                                   //set key to unpressed state
 }
 
 void Chip8Cpu::setKey(int ind){
-  this->keyInputs[ind] = 1;                 //set key to pressed state
+  this->keyInputs[ind] = 1;                                   //set key to pressed state
 }
 
 Chip8Cpu::~Chip8Cpu(){
@@ -37,24 +37,22 @@ Chip8Cpu::~Chip8Cpu(){
 bool Chip8Cpu::loadProgram(char* fileName){
   cout << "Loading ROM..." << endl;
 
-  FILE* rom = fopen(fileName, "rb");    //open binary rom file for read only
+  FILE* rom = fopen(fileName, "rb");                          //open binary rom file for read only
   if (nullptr == rom) {
     cerr << "Failed to open ROM" << endl;
     return false;
   }
-  fseek(rom, 0, SEEK_END);              //move position indicator to eof
-  long rom_size = ftell(rom);           //get position indicator (which is file size)
-  rewind(rom);                          //reset position indicator back to the beginning
-
-  // Allocate memory to store rom
-  char* rom_buffer = new char[rom_size];
+  fseek(rom, 0, SEEK_END);                                    //move position indicator to eof
+  long rom_size = ftell(rom);                                 //get position indicator (which is file size)
+  rewind(rom);                                                //reset position indicator back to the beginning
+                                          
+  char* rom_buffer = new char[rom_size];                      //Allocate memory to store rom
 
   if (rom_buffer == NULL) {
       cerr << "Failed to allocate memory for ROM" << endl;
       return false;
   }
 
-  // Copy ROM into buffer
   size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom); //read and store rom in temporary buffer
   if (result != rom_size) {
       cerr << "Failed to read ROM" << endl;
@@ -62,7 +60,7 @@ bool Chip8Cpu::loadProgram(char* fileName){
   }
 
   
-  if ((0x1000-0x200) > rom_size){               // Copy buffer to memory
+  if ((0x1000-0x200) > rom_size){                             // Copy buffer to memory
       for (int i = 0; i < rom_size; ++i) {
           memory[0x0200 + i] = (uint8_t)rom_buffer[i];   
       }
@@ -100,7 +98,7 @@ void Chip8Cpu::loadFont(){
     0xf0, 0x80, 0xf0, 0x80, 0xf0, 
     0xf0, 0x80, 0xf0, 0x80, 0x80}; 
   for(int i = 0; i < 80; i++){
-    memory[0x50 + i] = (unsigned short)((fontset[i]) & 0xFF);
+    memory[0x50 + i] = (unsigned short)((fontset[i]) & 0xFF);  //rom expects fonts to be loaded at 0x50 and onward
   }
   cout << "Fontset is loaded" << endl;
 }
@@ -112,7 +110,8 @@ void Chip8Cpu::run(Peripherals& peripherals){
   switch(opcode & 0xF000){
     case 0x0000:{
       switch(opcode & 0x00FF){
-        case 0x00E0:{                   //0x00E0: clear the screen 
+
+        case 0x00E0:{                                         //0x00E0: clear the screen 
           for(int i = 0; i < 32; i++){
             for(int j = 0; j < 64; j++){
               peripherals.gfx[i][j] = 0;
@@ -121,32 +120,36 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        case 0x00EE:{                   //return from subroutine
+
+        case 0x00EE:{                                         //0x00EE: return from subroutine
           sp--;
           pc = (unsigned short)(stack[sp]+2);
           break;
         }
+
         default:{
           cout << "----------------Unknown Opcode----------------" << endl;
-          exit(1);
+          exit(127);
           break;
         }
+
       }
       break;
     }
 
-    case 0x1000:{                                     //0x1NNN: jump to NNN
+    case 0x1000:{                                           //0x1NNN: jump to NNN
       pc = (unsigned short)(opcode & 0x0FFF);
       break;
     }
-    case 0x2000:{                                     //0x2NNN: call subroutine at address NNN
-      stack[sp] = pc;                                 //save where program counter was at on the stack
+
+    case 0x2000:{                                           //0x2NNN: call subroutine at address NNN
+      stack[sp] = pc;                                       //save where program counter was at on the stack
       sp++;                             
-      pc = (unsigned short)(opcode & 0x0FFF);         //jump to NNN: address of desired subroutine
+      pc = (unsigned short)(opcode & 0x0FFF);               //jump to NNN: address of desired subroutine
       break;
     }
 
-    case 0x3000:{                                     //0x3XNN: skips next opcode if VX == NN
+    case 0x3000:{                                           //0x3XNN: skips next opcode if VX == NN
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short NN = opcode & 0x00FF;
       if(this -> V[X] == NN){
@@ -156,7 +159,8 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }   
       break;
     }
-    case 0x4000:{                                     //0x4XNN: skip the next instruction if VX != NN
+
+    case 0x4000:{                                           //0x4XNN: skip the next instruction if VX != NN
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short NN = opcode & 0x00FF;
       if(this -> V[X] != NN){
@@ -166,7 +170,8 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }   
       break;
     }
-    case 0x5000:{                                     //0x5XY0: skip next instruction if VX == VY
+
+    case 0x5000:{                                           //0x5XY0: skip next instruction if VX == VY
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short Y = (opcode & 0x00F0) >> 4;
       if(this -> V[X] == this -> V[Y]){
@@ -176,13 +181,15 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }
       break;
     }
-    case 0x6000:{                                     //0x6XNN: set VX to NN
+
+    case 0x6000:{                                           //0x6XNN: set VX to NN
       int X = (opcode & 0x0F00) >> 8;
       V[X] = (unsigned short)(opcode & 0x00FF);       
       pc += 2; 
       break;
     }
-    case 0x7000:{                                     //0x7XNN: adds NN to VX
+
+    case 0x7000:{                                          //0x7XNN: adds NN to VX
       int X = (opcode & 0x0F00) >> 8;
       int NN = opcode & 0x00FF;
       V[X] = (unsigned short)((V[X] + NN) & 0xFF);
@@ -192,94 +199,103 @@ void Chip8Cpu::run(Peripherals& peripherals){
 
     case 0x8000:{
       switch(opcode & 0x000F){
-        case 0x0000:{                                 //0x8XY0: set VX to VY
+
+        case 0x0000:{                                       //0x8XY0: set VX to VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = V[Y];
           pc += 2;
           break;
         }
-        case 0x0001:{                                 //0x8XY1: set VX to VX | VY
+
+        case 0x0001:{                                       //0x8XY1: set VX to VX | VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = (unsigned short)(V[X] | V[Y]);
           pc += 2;
           break;
         }
-        case 0x0002:{                                 //0x8XY2: sets VX to VX & VY
+
+        case 0x0002:{                                       //0x8XY2: sets VX to VX & VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = (unsigned short)(V[X] & V[Y]);
           pc += 2;
           break;
         }
-        case 0x0003:{                                 //0x8XY3: set VX to VX ^ VY
+
+        case 0x0003:{                                       //0x8XY3: set VX to VX ^ VY
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           V[X] = (unsigned short)(V[X] ^ V[Y]);
           pc += 2;
           break;
         }
-        case 0x0004:{                                 //0x8XY4: add VX and VY into VX and save carry into VF
+
+        case 0x0004:{                                       //0x8XY4: add VX and VY into VX and save carry into VF
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;  
-          if(V[X] > 0xFF - V[Y]){                     //check for overflow
-            V[0xF] = 1;
+          if(V[X] > 0xFF - V[Y]){                           //check for overflow
+            this -> V[0xF] = 1;
           }else{
-            V[0xF] = 0;
+            this -> V[0xF] = 0;
           }
-          V[X] = (unsigned short)((V[X] + V[Y]) & 0xFF); //truncate addition to 8 bits
+          this -> V[X] = (unsigned short)((V[X] + V[Y]) & 0xFF); //truncate addition to 8 bits
           pc += 2;
           break;
         }
-        case 0x0005:{ //0x8XY5: perform VX-VY and set VF to complimented carry
+
+        case 0x0005:{                                       //0x8XY5: perform VX-VY and set VF to complimented carry
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
           if (V[Y] > V[X]){
-            V[0xF] = 0;
+            this -> V[0xF] = 0;
           }else{
-            V[0xF] = 1;
+            this -> V[0xF] = 1;
           }
-          V[X] = (unsigned short)(V[X] - V[Y]);
+          this -> V[X] = (unsigned short)(V[X] - V[Y]);
           pc += 2;
           break;
         }
-        case 0x0006:{ //0x8XY6: shift VX 1 bit to the right (do not change VY)
-                      //save LSB in VF before the shift
+
+        case 0x0006:{                                       //0x8XY6: shift VX 1 bit to the right (do not change VY)
+                                                            //save LSB in VF before the shift
           int X = (opcode & 0x0F00) >> 8;
-          V[0xF] = V[X] & 0x1;
-          V[X] >>= 1;
+          this -> V[0xF] = V[X] & 0x1;
+          this -> V[X] >>= 1;
           pc += 2;
           break;
         }
-        case 0x0007:{//0x8XY7: perform VY-VX and set VF to complimented carry
+
+        case 0x0007:{                                       //0x8XY7: perform VY-VX and set VF to complimented carry
           int X = (opcode & 0x0F00) >> 8;
           int Y = (opcode & 0x00F0) >> 4;
-          if (V[X] > V[Y]){
-            V[0xF] = 0;
+          if (this -> V[X] > this -> V[Y]){
+            this -> V[0xF] = 0;
           }else{
-            V[0xF] = 1;
+            this -> V[0xF] = 1;
           }
-          V[X] = (unsigned short)(V[Y] - V[X]);
+          this -> V[X] = (unsigned short)(this -> V[Y] - this -> V[X]);
           pc += 2;
           break;
         }
-        case 0x000E:{//0x8XY6: shift VX 1 bit to the left (do not change VY)
-                      //save MSB in VF before the shift
+
+        case 0x000E:{                                       //0x8XY6: shift VX 1 bit to the left (do not change VY)
+                                                            //save MSB in VF before the shift
           int X = (opcode & 0x0F00) >> 8;
-          V[0xF] = V[X] >> 7;
-          V[X] <<= 1;
+          this -> V[0xF] = this -> V[X] >> 7;
+          this -> V[X] <<= 1;
           pc += 2;
           break;
         }
         default:
-          cerr << "Opcode is not recognized!" << endl;
-          exit(1);
+          cout << "----------------Unknown Opcode----------------" << endl;
+          exit(127);
       }
       break;
     }
  
-    case 0x9000:{ // 0x9XY0: skip next instruction if VX != VY
+    case 0x9000:{                                          //0x9XY0: skip next instruction if VX != VY
       unsigned short X = (opcode & 0x0F00) >> 8;
       unsigned short Y = (opcode & 0x00F0) >> 4;
       if(this -> V[X] != this -> V[Y]){
@@ -289,39 +305,42 @@ void Chip8Cpu::run(Peripherals& peripherals){
       }
       break;
     }
-    case 0xA000:{
-      this->I = (unsigned short)(opcode & 0x0FFF); //set address pointer to NNN
-      pc += 2; //advance to next opcode
+
+    case 0xA000:{                                           //0xANNN: set address register to NNN
+      this->I = (unsigned short)(opcode & 0x0FFF);          
+      pc += 2; 
       break;
     }
-    case 0xB000:{ //0xBNNN: jump to V0 + NNN
+
+    case 0xB000:{                                           //0xBNNN: jump to V0 + NNN
       int NNN = opcode & 0x0FFF;
       pc = (unsigned short)(NNN + V[0]);
       break;
     }
-    case 0xC000:{ //0xCXNN: set V[X] to a random number & NN
+
+    case 0xC000:{                                           //0xCXNN: set V[X] to a random number & NN
       int X = (opcode & 0x0F00) >> 8;
-      int NN = opcode & 0x00FF;
-      V[X] = (unsigned short) (NN & rand()%256);
+      int NN  = opcode & 0x00FF;
+      this -> V[X] = (unsigned short) (NN & rand()%256);
       pc += 2;
       break;
     }
-    case 0xD000:{//DXYN: draw sprite of width 8px, height Npx, at coords (VX,VY)
+    case 0xD000:{                                           //DXYN: draw sprite of width 8px, height Npx, at coords (VX,VY)
       int X = V[(opcode & 0x0F00) >> 8];
       int Y = V[(opcode & 0x00F0) >> 4];
       int height = opcode & 0x000F;
-      V[0xF] = 0; //set collision flag to false by default
-      int vert;
+      this -> V[0xF] = 0;                                   //set collision flag to false by default
+      int sprite;
       int pixel;
       for(int i = 0; i < height; i++){
-        vert = memory[I + i];
+        sprite = this -> memory[I + i];
         for(int j = 0; j < 8; j++){
-          pixel = vert & (0x80 >> j);
+          pixel = sprite & (0x80 >> j);                     //get each column of the sprite
           if(pixel != 0){
             if(peripherals.gfx[Y + i][X + j] == 1){
-              V[0xF] = 1; //collision detected
+              this -> V[0xF] = 1;                           //collision detected
             }
-            peripherals.gfx[Y + i][X + j] ^= 1;
+            peripherals.gfx[Y + i][X + j] ^= 1;             //toggle the pixel being drawn
           }
         }
       }
@@ -332,9 +351,9 @@ void Chip8Cpu::run(Peripherals& peripherals){
 
     case 0xE000:{
       switch(opcode & 0x00FF){
-        case 0x009E:{ //0xEX9E: skip next instruction if key V[X] is pressed
-          int key = V[(opcode & 0x0F00) >> 8];
-          exit(0);
+
+        case 0x009E:{                                       //0xEX9E: skip next instruction if key V[X] is pressed
+          int key = this -> V[(opcode & 0x0F00) >> 8];
           if(this -> keyInputs[key] == 1){
             pc += 4;
           }else{
@@ -342,8 +361,9 @@ void Chip8Cpu::run(Peripherals& peripherals){
           }
           break;
         }
-        case 0x00A1:{//0xEXA1: skip next instruction if key V[X] is not pressed
-          int key = V[(opcode & 0x0F00) >> 8];
+
+        case 0x00A1:{                                       //0xEXA1: skip next instruction if key V[X] is not pressed
+          int key = this -> V[(opcode & 0x0F00) >> 8];
           if(this -> keyInputs[key] == 0){
             pc += 4;
           }else{
@@ -353,37 +373,41 @@ void Chip8Cpu::run(Peripherals& peripherals){
         }    
         default:{
           cerr << "Opcode is not recognized!" << endl;
-          exit(1); 
+          exit(127); 
         }  
       }
       break;
     }
 
     case 0xF000:{
-      switch(opcode & 0x00FF){ //0xFX33: store a binary-coded decimal V[X]'s digits in I, I+1, I+2
-        case 0x0007:{ //0xFX07 : set V[x] to delay timer
-          V[(opcode & 0x0F00) >> 8] = (unsigned short) this -> delay_timer;
-          pc += 2;
-          //break;
-        }
-        case 0x0015:{ //0xFX15: set delay timer to V[x]
-          this -> delay_timer = V[(opcode & 0x0F00) >> 8];
-          pc += 2;
-          //break;
-        } 
-        case 0x0029:{ //0xFX29: sets I to point to character sprite in V[X]
-          int character = V[(opcode & 0x0F00)  >> 8];
-          I = (unsigned short)(0x50 + 5 * character);
+      switch(opcode & 0x00FF){                            
+        
+        case 0x0007:{                                     //0xFX07 : set V[x] to delay timer
+          this -> V[(opcode & 0x0F00) >> 8] = (unsigned short) this -> delay_timer;
           pc += 2;
           break;
         }
-        case 0x000A:{         //0xFX0A: await a keypress and store in VX
+        
+        case 0x0015:{                                     //0xFX15: set delay timer to V[x]
+          this -> delay_timer = V[(opcode & 0x0F00) >> 8];
+          pc += 2;
+          break;
+        } 
+        
+        case 0x0029:{                                     //0xFX29: sets I to point to character sprite in V[X]
+          int character = V[(opcode & 0x0F00)  >> 8];
+          this -> I = (unsigned short)(0x50 + 5 * character);
+          pc += 2;
+          break;
+        }
+        
+        case 0x000A:{                                     //0xFX0A: await a keypress and store in VX
           int X = (opcode & 0x0F00) >> 8;
           bool pressed = false;
           for(int i = 0; i < 16; i++){
             if(this -> keyInputs[i] == 1){
               pressed = true;
-              V[X] = i;
+              this -> V[X] = i;
             }
           }
           if(!pressed){
@@ -392,26 +416,29 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        case 0x001E:{ //0xFX1E: set I to VX + I and VF is set to the overflow
+        
+        case 0x001E:{                                    //0xFX1E: set I to VX + I and VF is set to the overflow
           int X = (opcode & 0x0F00) >> 8;
-          if(V[X] + this -> I > 0x0FFF){
-            V[0xF] = 1;
+          if(this -> V[X] + this -> I > 0x0FFF){
+            this -> V[0xF] = 1;
           }else{
-            V[0xF] = 0;
+            this -> V[0xF] = 0;
           }
           this -> I = this -> I + V[X];
           pc += 2;
           break;
         }
-        case 0x0033:{
-          int mem = V[(opcode & 0x0F00) >> 8];
-          memory[I] = (unsigned short)mem/100; //hundreds
-          memory[I+1] = (unsigned short)(mem/10)%10; //tens
-          memory[I+2] = (unsigned short)(mem%10); //ones
+        
+        case 0x0033:{                                   //0xFX33: store a binary-coded decimal V[X]'s digits in I, I+1, I+2
+          int mem = this -> V[(opcode & 0x0F00) >> 8];       
+          this -> memory[I] = (unsigned short)mem/100;          //hundreds
+          this -> memory[I+1] = (unsigned short)(mem/10)%10;    //tens
+          this -> memory[I+2] = (unsigned short)(mem%10);       //ones
           pc += 2;
           break;
         }
-        case 0x0055:{ //0xFX55: stores V0 to VX in memory starting at address I
+        
+        case 0x0055:{                                   //0xFX55: stores V0 to VX in memory starting at address I
           int X = (opcode & 0x0F00) >> 8;
           for(int i = 0; i < X; i++){
             this->memory[this -> I+i] = this -> V[i];
@@ -420,24 +447,27 @@ void Chip8Cpu::run(Peripherals& peripherals){
           pc += 2;
           break;
         }
-        case 0x0065:{ //0xFX65: loads data to register V[0] to V[X] starting from mem address I
+        
+        case 0x0065:{                                   //0xFX65: loads data to register V[0] to V[X] starting from mem address I
           int bound = (opcode & 0x0F00) >> 8;
           for(int i = 0; i < bound; i++){
-            V[i] = memory[I+i];
+            this -> V[i] = this -> memory[I+i];
           }
           this -> I = (unsigned short)(this -> I + bound + 1);
           pc += 2;
           break;
         }
-        case 0x0018:{ //0xFX15: set sound timer to VX
+        
+        case 0x0018:{                                   //0xFX15: set sound timer to VX
           int X = (opcode & 0x0F00) >> 8;
-          this -> sound_timer = V[X];
+          this -> sound_timer = this -> V[X];
           pc += 2;
           break;
         }
+        
         default:{
           cerr << "Opcode is not recognized!" << endl;
-          exit(1);
+          exit(127);
         }
       }
       break;
@@ -662,6 +692,14 @@ int main(int argc, char* argv[]){
     }
     cpu -> run(*peripherals);
     peripherals -> updateDisplay();
+
+    if (cpu -> sound_timer > 0){
+      cpu -> sound_timer--;
+    }
+    if (cpu -> delay_timer > 0){
+      cpu -> delay_timer--;
+    }
+
     usleep(4000);
   }
   al_destroy_timer(timer);

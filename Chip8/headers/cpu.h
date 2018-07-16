@@ -16,16 +16,15 @@ class Chip8Cpu{
     unsigned short *V;       
     unsigned short I;          
     unsigned short pc;           
-    int delay_timer;  
-    int sound_timer;
-
+    unsigned char *keyInputs;
     unsigned short *stack; 
     unsigned int sp;
 
     
 
   public:
-    unsigned char *keyInputs; //TODO: make private
+    int delay_timer;  
+    int sound_timer;
     Chip8Cpu();
     void run(Peripherals& peripherals);
     void loadFont();

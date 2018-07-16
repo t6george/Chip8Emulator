@@ -12,7 +12,6 @@ class Peripherals{
     const float FPS;
     bool toUpdate;
 
-    //ALLEGRO_TIMER *timer;
     ALLEGRO_TIMEOUT timeout;
 		ALLEGRO_EVENT event;
     ALLEGRO_KEYBOARD_STATE *keyState;
