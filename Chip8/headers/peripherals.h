@@ -18,9 +18,10 @@ class Peripherals{
     ALLEGRO_KEYBOARD_STATE *keyState;
     ALLEGRO_EVENT_QUEUE *event_queue;
     ALLEGRO_DISPLAY *display;
+    //Canvas * canvas;
     short**gfx;
     
-    Peripherals();
+    Peripherals(int mode);
     ~Peripherals();
 
     void updateDisplay();

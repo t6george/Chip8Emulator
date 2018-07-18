@@ -56,6 +56,7 @@ bool Chip8Cpu::loadProgram(char* fileName){
   }
 
   size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom); //read and store rom in temporary buffer
+  
   if (result != rom_size) {
       cerr << "Failed to read ROM" << endl;
       return false;
@@ -130,7 +131,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
         }
 
         default:{
-          cout << "----------------Unknown Opcode----------------" << endl;
+          cerr << "----------------Unknown Opcode----------------" << endl;
           exit(127);
           break;
         }
@@ -291,7 +292,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
           break;
         }
         default:
-          cout << "----------------Unknown Opcode----------------" << endl;
+          cerr << "----------------Unknown Opcode----------------" << endl;
           exit(127);
       }
       break;
@@ -374,7 +375,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
           break;
         }    
         default:{
-          cerr << "Opcode is not recognized!" << endl;
+          cerr << "----------------Unknown Opcode----------------" << endl;
           exit(127); 
         }  
       }
@@ -468,7 +469,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
         }
         
         default:{
-          cerr << "Opcode is not recognized!" << endl;
+          cerr << "----------------Unknown Opcode----------------" << endl;
           exit(127);
         }
       }
@@ -481,7 +482,7 @@ int main(int argc, char* argv[]){
   al_init();
 
   Chip8Cpu* cpu = new Chip8Cpu();
-  Peripherals* peripherals = new Peripherals();
+  Peripherals* peripherals = new Peripherals(strncmp(argv[1],"gfx",3));
 
   cpu -> loadFont();
 
@@ -489,24 +490,6 @@ int main(int argc, char* argv[]){
 
   al_install_keyboard();
   al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
-
-  if(strncmp(argv[1],"mtx",3) == 0){
-    RGBMatrix::Options defaults;
-    vector<matCoord> airports, planes;
-    addAirports(airports);
-    defaults.hardware_mapping = "adafruit-hat";
-    defaults.rows = 32;
-    defaults.cols = 64;
-    defaults.chain_length = 1;
-    defaults.parallel = 1;
-    defaults.brightness = 40;
-
-    if (canvas == NULL) {
-      return 1;
-    }
-  }
-
-  Canvas *canvas = rgb_matrix::CreateMatrixFromFlags(&argc, &argv, &defaults);
 
   while (cpu->running){
     
@@ -659,12 +642,12 @@ int main(int argc, char* argv[]){
     }
     cpu -> run(*peripherals);
 
-    if(strncmp(argv[1],"gfx",3) == 0 && peripherals -> toUpdate){
+    if(NULL != peripherals -> display && peripherals -> toUpdate){
       peripherals -> updateDisplay();
     }
-    else if(strncmp(argv[1],"mtx",3) == 0 && peripherals -> toUpdate){
-      peripherals -> updateLEDMatrix(canvas);
-    }
+    // else if(NULL != peripherals -> canvas && peripherals -> toUpdate){
+    //   peripherals -> updateLEDMatrix(peripherals -> canvas);
+    // }
   
     if (cpu -> sound_timer > 0){
       cpu -> sound_timer--;

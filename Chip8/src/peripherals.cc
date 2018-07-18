@@ -5,7 +5,7 @@ using namespace std;
 // using rgb_matrix::RGBMatrix;
 // using rgb_matrix::Canvas;
 
-Peripherals::Peripherals(): FPS(60.0){
+Peripherals::Peripherals(int mode): FPS(60.0){
 	
   this->gfx = new short *[32];
   for(int i = 0; i < 32; i++){
@@ -14,23 +14,37 @@ Peripherals::Peripherals(): FPS(60.0){
         this->gfx[i][j] = 0;
       }
   }
-
-	this->display = al_create_display(1280, 640);
-
-	if (!display) {
-		cerr << "Failed to create display." << endl;
-	}
-	
 	this->event_queue = al_create_event_queue();
-
 	if (!event_queue) {
 		cerr << "Failed to create event queue." << endl;
 	}
-	
-	al_register_event_source(event_queue, al_get_display_event_source(display));
+	if(mode == 0){
+		this->display = al_create_display(1280, 640);
 
-	al_clear_to_color(al_map_rgb(0, 0, 0));
-	al_flip_display();
+		if (!display) {
+			cerr << "Failed to create display." << endl;
+		}
+		
+		al_register_event_source(event_queue, al_get_display_event_source(display));
+
+		al_clear_to_color(al_map_rgb(0, 0, 0));
+		al_flip_display();
+
+		//this -> canvas = NULL;
+	}else{
+		// RGBMatrix::Options defaults;
+
+		// defaults.hardware_mapping = "adafruit-hat";
+		// defaults.rows = 32;
+		// defaults.cols = 64;
+		// defaults.chain_length = 1;
+		// defaults.parallel = 1;
+		// defaults.brightness = 40;
+
+		// Canvas *canvas = rgb_matrix::CreateMatrixFromFlags(&argc, &argv, &defaults);
+
+		this -> display = NULL;
+	}
 
 	al_init_timeout(&timeout, 0.06);
 }

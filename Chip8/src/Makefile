@@ -17,8 +17,27 @@ gfx_DEPENDANCIES = \
 	$(gfx_HEADERS) \
 	$(gfx_SOURCES)
 
-gfx: $(gfxL_DEPENDANCIES)
+gfx: $(gfx_DEPENDANCIES)
 	gcc -g -o $@ $(gfx_SOURCES) $(gfx_INCLUDE_DIRS) -L$(gfx_LIB_DIRS) $(gfx_LIBS)
 	./$(gfx_EXEC) gfx
 
 #------------------------------------LED MATRIX Build------------------------------------#
+mtx_LIB_DIRS = /home/pi/rpi-rgb-led-matrix/lib
+
+mtx_INCLUDE_DIRS = -I. -I/home/pi/rpi-rgb-led-matrix/include
+
+mtx_HEADERS := $(gfx_HEADERS)
+mtx_SOURCES := $(gfx_SOURCES)
+
+mtx_LIBS = -lrgbmatrix -lrt -lm -lpthread
+
+mtx_EXEC = mtx
+
+gfx_DEPENDANCIES = \
+	Makefile \
+	$(mtx_HEADERS) \
+	$(mtx_SOURCES)
+
+mtx: $(mtx_DEPENDANCIES)
+	gcc -g -o $@ $(mtx_SOURCES) $(mtx_INCLUDE_DIRS) -L$(mtx_LIB_DIRS) $(mtx_LIBS)
+	./$(mtx_EXEC) mtx
