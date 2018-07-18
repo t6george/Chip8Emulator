@@ -1,3 +1,4 @@
+#------------------------------------Allegro5 Build------------------------------------#
 export gfx_HOME=/usr/local/Cellar/allegro/5.2.4.0
 
 gfx_LIB_DIRS = $(gfx_HOME)/lib
@@ -18,4 +19,6 @@ gfx_DEPENDANCIES = \
 
 gfx: $(gfxL_DEPENDANCIES)
 	gcc -g -o $@ $(gfx_SOURCES) $(gfx_INCLUDE_DIRS) -L$(gfx_LIB_DIRS) $(gfx_LIBS)
-	./$(gfx_EXEC)
+	./$(gfx_EXEC) gfx
+
+#------------------------------------LED MATRIX Build------------------------------------#

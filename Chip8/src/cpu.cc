@@ -3,20 +3,22 @@
 using namespace std;
 
 Chip8Cpu::Chip8Cpu(){
-    memory = new unsigned short[0x1000];                      //4KB of program memory
-    V = new unsigned short[16];                               //16 8-bit registers
-    I = 0x0;                                                  //memory address register default
-    pc = 0x0200;                                              //load rom at this starting address
-    delay_timer = 0;                        
-    sound_timer = 0;
+    this -> memory = new unsigned short[0x1000];                      //4KB of program memory
+    this -> V = new unsigned short[16];                               //16 8-bit registers
+    this -> I = 0x0;                                                  //memory address register default
+    pc = 0x0200;                                                      //load rom at this starting address
+    this -> delay_timer = 0;                        
+    this -> sound_timer = 0;
 
-    stack = new unsigned short[16];                           //stack of return addresses after subroutines
-    sp = 0;                                                   //stack initially is empty
+    this -> stack = new unsigned short[16];                           //stack of return addresses after subroutines
+    this -> sp = 0;                                                   //stack initially is empty
 
-    keyInputs = new unsigned char[16];
+    this -> keyInputs = new unsigned char[16];
     for(int i = 0; i < 16; i++){
-      keyInputs[i] = 0;
+      this -> keyInputs[i] = 0;
     }
+
+    this -> running = true;
 }
 
 void Chip8Cpu::resetKey(int ind){
@@ -329,18 +331,18 @@ void Chip8Cpu::run(Peripherals& peripherals){
       int X = V[(opcode & 0x0F00) >> 8];
       int Y = V[(opcode & 0x00F0) >> 4];
       int height = opcode & 0x000F;
-      this -> V[0xF] = 0;                                   //set collision flag to false by default
+      this -> V[0xF] = 0;                                             //set collision flag to false by default
       int sprite;
       int pixel;
       for(int i = 0; i < height; i++){
         sprite = this -> memory[I + i];
         for(int j = 0; j < 8; j++){
-          pixel = sprite & (0x80 >> j);                     //get each column of the sprite
+          pixel = sprite & (0x80 >> j);                               //get each column of the sprite
           if(pixel != 0){
-            if(peripherals.gfx[Y + i][X + j] == 1){
-              this -> V[0xF] = 1;                           //collision detected
+            if(peripherals.gfx[(Y + i)%32][(X + j)%64] == 1){        
+              this -> V[0xF] = 1;                                     //collision detected
             }
-            peripherals.gfx[Y + i][X + j] ^= 1;             //toggle the pixel being drawn
+            peripherals.gfx[(Y + i)%32][(X + j)%64] ^= 1;             //toggle the pixel being drawn (screen-wrapping)
           }
         }
       }
@@ -450,7 +452,7 @@ void Chip8Cpu::run(Peripherals& peripherals){
         
         case 0x0065:{                                   //0xFX65: loads data to register V[0] to V[X] starting from mem address I
           int bound = (opcode & 0x0F00) >> 8;
-          for(int i = 0; i < bound; i++){
+          for(int i = 0; i <= bound; i++){
             this -> V[i] = this -> memory[I+i];
           }
           this -> I = (unsigned short)(this -> I + bound + 1);
@@ -476,123 +478,104 @@ void Chip8Cpu::run(Peripherals& peripherals){
 }
 
 int main(int argc, char* argv[]){
-  if (!al_init()) {
-		cerr << "Failed to initialize allegro." << endl;
-		return 1;
-	}
+  al_init();
 
   Chip8Cpu* cpu = new Chip8Cpu();
   Peripherals* peripherals = new Peripherals();
 
-  ALLEGRO_TIMER *timer = al_create_timer(1.0 / peripherals->FPS);
-  if (!timer) {
-		cerr << "Failed to create timer." << endl;
-	}
-
-  if(!al_install_keyboard()) {
-    cerr << "failed to initialize the keyboard!" << endl;
-    return -1;
-  }
-
-  al_register_event_source(peripherals->event_queue, al_get_timer_event_source(timer));
-
   cpu -> loadFont();
 
-  if(!cpu -> loadProgram((char *)"../roms/pong2.c8")){
-    return -1;
-  }
-  
-  al_start_timer(timer);
+  cpu -> loadProgram((char *)"../roms/pong2.c8");
 
+  al_install_keyboard();
   al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
 
-  while (peripherals->running){
+  if(strncmp(argv[1],"mtx",3) == 0){
+    RGBMatrix::Options defaults;
+    vector<matCoord> airports, planes;
+    addAirports(airports);
+    defaults.hardware_mapping = "adafruit-hat";
+    defaults.rows = 32;
+    defaults.cols = 64;
+    defaults.chain_length = 1;
+    defaults.parallel = 1;
+    defaults.brightness = 40;
+
+    if (canvas == NULL) {
+      return 1;
+    }
+  }
+
+  Canvas *canvas = rgb_matrix::CreateMatrixFromFlags(&argc, &argv, &defaults);
+
+  while (cpu->running){
     
     if (al_wait_for_event_until(peripherals->event_queue, &(peripherals->event), &(peripherals->timeout))) {
       switch (peripherals->event.type) {
-        case ALLEGRO_EVENT_TIMER:{
-          break;
-        }
         case ALLEGRO_EVENT_KEY_DOWN:{
           switch(peripherals->event.keyboard.keycode) {
             case ALLEGRO_KEY_1:
               cpu -> setKey(0x1);
-              cout << "                    1" << endl;
               break;
 
             case ALLEGRO_KEY_2:
               cpu -> setKey(0x2);
-              cout << "                    2" << endl;
               break;
 
             case ALLEGRO_KEY_3: 
               cpu -> setKey(0x3);
-              cout << "                    3" << endl;
               break;
 
             case ALLEGRO_KEY_4:
               cpu -> setKey(0x4);
-              cout << "                    4" << endl;
               break;
 
             case ALLEGRO_KEY_5:
               cpu -> setKey(0x5);
-              cout << "                    5" << endl;
               break;
 
             case ALLEGRO_KEY_6:
               cpu -> setKey(0x6);
-              cout << "                    6" << endl;
               break;
 
             case ALLEGRO_KEY_7: 
               cpu -> setKey(0x7);
-              cout << "                    7" << endl;
               break;
 
             case ALLEGRO_KEY_8:
               cpu -> setKey(0x8);
-              cout << "                    8" << endl;
               break;
             
             case ALLEGRO_KEY_9:
               cpu -> setKey(0x9);
-              cout << "                    9"<< endl;
               break;
             
             case ALLEGRO_KEY_Q:
               cpu -> setKey(0x0);
-              cout << "                    Q"<< endl;
               break;
 
             case ALLEGRO_KEY_W:
               cpu -> setKey(0xA);
-              cout << "                    W"<< endl;
               break;
 
             case ALLEGRO_KEY_E: 
               cpu -> setKey(0xB);
-              cout << "                    E"<< endl;
               break;
 
             case ALLEGRO_KEY_R:
               cpu -> setKey(0xC);
-              cout << "                    R"<< endl;
               break;
 
             case ALLEGRO_KEY_T:
               cpu -> setKey(0xD);
-              cout << "                    T"<< endl;
               break;
 
             case ALLEGRO_KEY_Y:
               cpu -> setKey(0xE);
-              cout << "                    Y"<< endl;
               break;
 
             case ALLEGRO_KEY_U: 
               cpu -> setKey(0xF);
-              cout << "                    U"<< endl;
               break;
           }
           break;
@@ -601,88 +584,72 @@ int main(int argc, char* argv[]){
           switch(peripherals->event.keyboard.keycode) {
             case ALLEGRO_KEY_1:
               cpu -> resetKey(0x1);
-              cout << "                    1" << endl;
               break;
 
             case ALLEGRO_KEY_2:
               cpu -> resetKey(0x2);
-              cout << "                    2" << endl;
               break;
 
             case ALLEGRO_KEY_3: 
               cpu -> resetKey(0x3);
-              cout << "                    3" << endl;
               break;
 
             case ALLEGRO_KEY_4:
               cpu -> resetKey(0x4);
-              cout << "                    4" << endl;
               break;
 
             case ALLEGRO_KEY_5:
               cpu -> resetKey(0x5);
-              cout << "                    5" << endl;
               break;
 
             case ALLEGRO_KEY_6:
               cpu -> resetKey(0x6);
-              cout << "                    6" << endl;
               break;
 
             case ALLEGRO_KEY_7: 
               cpu -> resetKey(0x7);
-              cout << "                    7" << endl;
               break;
 
             case ALLEGRO_KEY_8:
               cpu -> resetKey(0x8);
-              cout << "                    8" << endl;
               break;
             
             case ALLEGRO_KEY_9:
               cpu -> resetKey(0x9);
-              cout << "                    9"<< endl;
               break;
             
             case ALLEGRO_KEY_Q:
               cpu -> resetKey(0x0);
-              cout << "                    Q"<< endl;
               break;
 
             case ALLEGRO_KEY_W:
               cpu -> resetKey(0xA);
-              cout << "                    W"<< endl;
               break;
 
             case ALLEGRO_KEY_E: 
               cpu -> resetKey(0xB);
-              cout << "                    E"<< endl;
               break;
 
             case ALLEGRO_KEY_R:
               cpu -> resetKey(0xC);
-              cout << "                    R"<< endl;
               break;
 
             case ALLEGRO_KEY_T:
               cpu -> resetKey(0xD);
-              cout << "                    T"<< endl;
               break;
 
             case ALLEGRO_KEY_Y:
               cpu -> resetKey(0xE);
-              cout << "                    Y"<< endl;
               break;
 
             case ALLEGRO_KEY_U: 
               cpu -> resetKey(0xF);
-              cout << "                    U"<< endl;
               break;
           }
           break;
         }  
         case ALLEGRO_EVENT_DISPLAY_CLOSE:{
-          peripherals->running = false;
+          cpu->running = false;
           break;
         }
         default:{
@@ -691,18 +658,22 @@ int main(int argc, char* argv[]){
       }
     }
     cpu -> run(*peripherals);
-    peripherals -> updateDisplay();
 
+    if(strncmp(argv[1],"gfx",3) == 0 && peripherals -> toUpdate){
+      peripherals -> updateDisplay();
+    }
+    else if(strncmp(argv[1],"mtx",3) == 0 && peripherals -> toUpdate){
+      peripherals -> updateLEDMatrix(canvas);
+    }
+  
     if (cpu -> sound_timer > 0){
       cpu -> sound_timer--;
     }
     if (cpu -> delay_timer > 0){
       cpu -> delay_timer--;
     }
-
     usleep(4000);
   }
-  al_destroy_timer(timer);
   return 0;
 }
 

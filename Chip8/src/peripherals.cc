@@ -1,5 +1,10 @@
 #include "../headers/peripherals.h"
- 
+
+using namespace std;
+// using rgb_matrix::GPIO;
+// using rgb_matrix::RGBMatrix;
+// using rgb_matrix::Canvas;
+
 Peripherals::Peripherals(): FPS(60.0){
 	
   this->gfx = new short *[32];
@@ -9,11 +14,6 @@ Peripherals::Peripherals(): FPS(60.0){
         this->gfx[i][j] = 0;
       }
   }
-	// this->timer = al_create_timer(1.0 / FPS);
-
-	// if (!timer) {
-	// 	cerr << "Failed to create timer." << endl;
-	// }
 
 	this->display = al_create_display(1280, 640);
 
@@ -33,9 +33,6 @@ Peripherals::Peripherals(): FPS(60.0){
 	al_flip_display();
 
 	al_init_timeout(&timeout, 0.06);
-	//al_start_timer(timer);
-
-	this->running = true;
 }
 
 Peripherals::~Peripherals(){
@@ -48,15 +45,27 @@ void Peripherals::updateDisplay(){
 
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
-	if(this->toUpdate){
-		for(int i = 0; i < 64; i++){
-			for(int j = 0; j < 32; j++){
-				if(this->gfx[j][i] == 1){
-					al_draw_filled_rectangle(i*20,j*20,i*20+20,j*20+20,al_map_rgb(255,255,255));
-				}
+	for(int i = 0; i < 64; i++){
+		for(int j = 0; j < 32; j++){
+			if(this->gfx[j][i] == 1){
+				al_draw_filled_rectangle(i*20,j*20,i*20+20,j*20+20,al_map_rgb(255,255,255));
 			}
 		}
-		al_flip_display();
 	}
+	al_flip_display();
+
 	this->toUpdate = false;
 }
+
+// void Peripherals::updateLEDMatrix(Canvas* canvas){	
+// 	short white[3] = {255,255,255};
+
+// 	for(int i = 0; i < 64; i++){
+// 		for(int j = 0; j < 32; j++){
+// 			if(this -> gfx[j][i] == 1){
+// 				canvas -> setPixel(i,j,white[0],white[1],white[2]);
+// 			}
+// 		}
+// 	}
+// 	this->toUpdate = false;
+// }

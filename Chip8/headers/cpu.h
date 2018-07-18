@@ -25,6 +25,7 @@ class Chip8Cpu{
   public:
     int delay_timer;  
     int sound_timer;
+    bool running;
     Chip8Cpu();
     void run(Peripherals& peripherals);
     void loadFont();

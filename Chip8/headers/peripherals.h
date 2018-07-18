@@ -1,8 +1,9 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
 #include <iostream>
-
-using namespace std;
+// #include "led-matrix.h"
+// #include <signal.h>
+// #include "graphics.h"
 
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
@@ -17,13 +18,13 @@ class Peripherals{
     ALLEGRO_KEYBOARD_STATE *keyState;
     ALLEGRO_EVENT_QUEUE *event_queue;
     ALLEGRO_DISPLAY *display;
-    bool running;
     short**gfx;
     
     Peripherals();
     ~Peripherals();
-    void updateSignal(bool sig);
+
     void updateDisplay();
+    //void updateLEDMatrix(Canvas* canvas);
     void generateSFX();
 };
 
