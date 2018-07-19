@@ -19,7 +19,7 @@ gfx_DEPENDANCIES = \
 
 gfx: $(gfx_DEPENDANCIES)
 	gcc -g -o $@ $(gfx_SOURCES) $(gfx_INCLUDE_DIRS) -L$(gfx_LIB_DIRS) $(gfx_LIBS)
-	./$(gfx_EXEC) gfx
+	./$(gfx_EXEC) gfx $(rom)
 
 #------------------------------------LED MATRIX Build------------------------------------#
 mtx_LIB_DIRS = /home/pi/rpi-rgb-led-matrix/lib
@@ -41,3 +41,7 @@ gfx_DEPENDANCIES = \
 mtx: $(mtx_DEPENDANCIES)
 	gcc -g -o $@ $(mtx_SOURCES) $(mtx_INCLUDE_DIRS) -L$(mtx_LIB_DIRS) $(mtx_LIBS)
 	./$(mtx_EXEC) mtx
+
+clean:
+	rm -f gfx
+	rm -f mtx

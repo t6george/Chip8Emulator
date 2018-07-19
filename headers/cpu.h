@@ -20,8 +20,6 @@ class Chip8Cpu{
     unsigned short *stack; 
     unsigned int sp;
 
-    
-
   public:
     int delay_timer;  
     int sound_timer;
@@ -31,7 +29,7 @@ class Chip8Cpu{
     void loadFont();
     void resetKey(int ind);
     void setKey(int ind);
-    bool loadProgram(char* fileName);
+    void loadProgram(char* fileName);
     ~Chip8Cpu();
 };
 

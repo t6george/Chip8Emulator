@@ -19,6 +19,7 @@ Chip8Cpu::Chip8Cpu(){
     }
 
     this -> running = true;
+
 }
 
 void Chip8Cpu::resetKey(int ind){
@@ -36,30 +37,31 @@ Chip8Cpu::~Chip8Cpu(){
   delete [] keyInputs;
 }
 
-bool Chip8Cpu::loadProgram(char* fileName){
+void Chip8Cpu::loadProgram(char* fileName){
   cout << "Loading ROM..." << endl;
 
   FILE* rom = fopen(fileName, "rb");                          //open binary rom file for read only
   if (nullptr == rom) {
     cerr << "Failed to open ROM" << endl;
-    return false;
+    exit(1);
   }
+
   fseek(rom, 0, SEEK_END);                                    //move position indicator to eof
   long rom_size = ftell(rom);                                 //get position indicator (which is file size)
   rewind(rom);                                                //reset position indicator back to the beginning
                                           
   char* rom_buffer = new char[rom_size];                      //Allocate memory to store rom
 
-  if (nullptr == rom_buffer) {
+  if (rom_buffer == NULL) {
       cerr << "Failed to allocate memory for ROM" << endl;
-      return false;
+      exit(1);
   }
 
   size_t result = fread(rom_buffer, sizeof(char), (size_t)rom_size, rom); //read and store rom in temporary buffer
   
   if (result != rom_size) {
       cerr << "Failed to read ROM" << endl;
-      return false;
+      exit(1);
   }
 
   
@@ -70,14 +72,13 @@ bool Chip8Cpu::loadProgram(char* fileName){
   }
   else {
       cerr << "ROM too large!" << endl;
-      return false;
+      exit(1);
   }
 
   fclose(rom);
   delete[] rom_buffer;
 
   cout << "Great Success!" << endl;
-  return true;
 
 }
 
@@ -103,12 +104,12 @@ void Chip8Cpu::loadFont(){
   for(int i = 0; i < 80; i++){
     memory[0x50 + i] = (unsigned short)((fontset[i]) & 0xFF);  //rom expects fonts to be loaded at 0x50 and onward
   }
-  cout << "Fontset is loaded" << endl;
+  cout << "Fontset is loaded!" << endl;
 }
 
 void Chip8Cpu::run(Peripherals& peripherals){
-  unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1];
-  cout << "opcode: 0x" << hex << opcode << endl;
+  unsigned int opcode = (unsigned int)memory[pc] << 8 | (unsigned int)memory[pc+1]; //opcodes are 16-bit: adjacent memory cells concatenated
+  cout << "Opcode: 0x" << hex << opcode << endl;
 
   switch(opcode & 0xF000){
     case 0x0000:{
@@ -335,18 +336,24 @@ void Chip8Cpu::run(Peripherals& peripherals){
       this -> V[0xF] = 0;                                             //set collision flag to false by default
       int sprite;
       int pixel;
+
       for(int i = 0; i < height; i++){
         sprite = this -> memory[I + i];
+
         for(int j = 0; j < 8; j++){
           pixel = sprite & (0x80 >> j);                               //get each column of the sprite
+
           if(pixel != 0){
             if(peripherals.gfx[(Y + i)%32][(X + j)%64] == 1){        
               this -> V[0xF] = 1;                                     //collision detected
             }
             peripherals.gfx[(Y + i)%32][(X + j)%64] ^= 1;             //toggle the pixel being drawn (screen-wrapping)
           }
+
         }
+
       }
+
       peripherals.toUpdate = true;
       pc += 2;
       break;
@@ -479,113 +486,38 @@ void Chip8Cpu::run(Peripherals& peripherals){
 }
 
 int main(int argc, char* argv[]){
-  string roms[16] = 
-  {"Airplane","Blinky","Brix","Connect4",
-    "Hi-Lo","Invaders","Kaleidoscope","Merlin",
-    "Pong","Syzygy","Tank","Tetris",
-    "Tic-Tac-Toe","UFO","VerticalBrix","WipeOff"};
-  
-  int selection = 0;
-  bool left_pressed = false;
-  bool right_pressed = false;
-  bool sel_pressed = false;
+  if(!al_init()){
+    cerr << "Allegro failed to initialize" << endl;
+    exit(1);
+  }
 
-  al_init();
+  string rom;
+
+  if (argc == 3){
+    rom = argv[2];
+  }else{
+    rom = "pong2";
+  }
 
   Chip8Cpu* cpu = new Chip8Cpu();
-  Peripherals* peripherals = new Peripherals(strncmp(argv[1],"gfx",3));
+  Peripherals* peripherals = new Peripherals(strncmp(argv[1],argv[1],3));
 
   cpu -> loadFont();
 
-  al_install_keyboard();
-  al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
-
-  if(NULL != peripherals->display){
-    ALLEGRO_FONT *font = al_load_ttf_font("pirulen.ttf",72,0 );
-
-    if (!font){
-      cerr << "Could not load 'pirulen.ttf'" << endl;
-      return 1;
-    }
-
-    al_clear_to_color(al_map_rgb(50,10,70));
-    al_draw_text(font, al_map_rgb(255,255,255), 640/2, (480/4),ALLEGRO_ALIGN_CENTRE, "Chip8 Emulator");
+  int pathLength = rom.length() + 12;
+  char* path_buffer = new char[pathLength];
   
-    while(!sel_pressed){
-      if (al_wait_for_event_until(peripherals->event_queue, &(peripherals->event), &(peripherals->timeout))) {
-        switch (peripherals->event.type) {
-          case ALLEGRO_EVENT_KEY_DOWN:{
-            switch(peripherals->event.keyboard.keycode) {
+  snprintf(path_buffer,pathLength,"../roms/%s.c8",rom.c_str());
+  cpu -> loadProgram(path_buffer);
+  
+  delete[] path_buffer;
 
-              case ALLEGRO_KEY_5:{
-                left_pressed = true;
-                selection--;
-                break;
-              }
-
-              case ALLEGRO_KEY_6:{
-                sel_pressed = true;
-                break;
-              }
-
-              case ALLEGRO_KEY_7:{
-                right_pressed = true;
-                selection++;
-                break;
-              }
-
-              default:{
-                break;
-              }
-            }
-            break;
-          }
-          case ALLEGRO_EVENT_KEY_UP:{
-            switch(peripherals->event.keyboard.keycode) {
-
-              case ALLEGRO_KEY_5:{
-                left_pressed = false;
-                break;
-              }
-
-              case ALLEGRO_KEY_6:{
-                sel_pressed = false;
-                break;
-              }
-
-              case ALLEGRO_KEY_7:{
-                right_pressed = false;
-                break;
-              }
-
-              default:{
-                break;
-              }
-            }
-            break;
-          }
-
-          default:
-            break;
-        }
-
-        if(sel_pressed){
-          selection = selection < 0 ? 0: selection;
-          selection = selection > 16 ? 16: selection;
-
-          int pathLength = roms[selection].length() + 11;
-          char* path_buffer = new char[pathLength];
-          
-          snprintf(path_buffer,pathLength,"../roms/%s.c8",roms[selection]);
-          cpu -> loadProgram(path_buffer);
-          
-          delete[] path_buffer;
-        }
-
-      }
-    usleep(7000);
-    }
+  if(!al_install_keyboard()){
+    cerr << "Could not find keyboard" << endl;
+    exit(1);
   }
+
+  al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
 
   while (cpu->running){
     
@@ -658,7 +590,8 @@ int main(int argc, char* argv[]){
               break;
           }
           break;
-        }           
+        }   
+
         case ALLEGRO_EVENT_KEY_UP:{
           switch(peripherals->event.keyboard.keycode) {
             case ALLEGRO_KEY_1:
@@ -727,10 +660,12 @@ int main(int argc, char* argv[]){
           }
           break;
         }  
+
         case ALLEGRO_EVENT_DISPLAY_CLOSE:{
           cpu->running = false;
           break;
         }
+
         default:{
           break;
         }
@@ -741,9 +676,9 @@ int main(int argc, char* argv[]){
     if(NULL != peripherals -> display && peripherals -> toUpdate){
       peripherals -> updateDisplay();
     }
-    // else if(NULL != peripherals -> canvas && peripherals -> toUpdate){
-    //   peripherals -> updateLEDMatrix(peripherals -> canvas);
-    // }
+    else if(NULL != peripherals -> canvas && peripherals -> toUpdate){
+      peripherals -> updateLEDMatrix(peripherals -> canvas);
+    }
   
     if (cpu -> sound_timer > 0){
       cpu -> sound_timer--;
@@ -751,7 +686,7 @@ int main(int argc, char* argv[]){
     if (cpu -> delay_timer > 0){
       cpu -> delay_timer--;
     }
-    usleep(7000);
+    usleep(1666);        //Chip8 operates at 60Hz
   }
   return 0;
 }
