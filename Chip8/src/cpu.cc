@@ -50,7 +50,7 @@ bool Chip8Cpu::loadProgram(char* fileName){
                                           
   char* rom_buffer = new char[rom_size];                      //Allocate memory to store rom
 
-  if (rom_buffer == NULL) {
+  if (nullptr == rom_buffer) {
       cerr << "Failed to allocate memory for ROM" << endl;
       return false;
   }
@@ -479,6 +479,17 @@ void Chip8Cpu::run(Peripherals& peripherals){
 }
 
 int main(int argc, char* argv[]){
+  string roms[16] = 
+  {"Airplane","Blinky","Brix","Connect4",
+    "Hi-Lo","Invaders","Kaleidoscope","Merlin",
+    "Pong","Syzygy","Tank","Tetris",
+    "Tic-Tac-Toe","UFO","VerticalBrix","WipeOff"};
+  
+  int selection = 0;
+  bool left_pressed = false;
+  bool right_pressed = false;
+  bool sel_pressed = false;
+
   al_init();
 
   Chip8Cpu* cpu = new Chip8Cpu();
@@ -486,10 +497,95 @@ int main(int argc, char* argv[]){
 
   cpu -> loadFont();
 
-  cpu -> loadProgram((char *)"../roms/pong2.c8");
-
   al_install_keyboard();
   al_register_event_source(peripherals -> event_queue, al_get_keyboard_event_source());
+
+  if(NULL != peripherals->display){
+    ALLEGRO_FONT *font = al_load_ttf_font("pirulen.ttf",72,0 );
+
+    if (!font){
+      cerr << "Could not load 'pirulen.ttf'" << endl;
+      return 1;
+    }
+
+    al_clear_to_color(al_map_rgb(50,10,70));
+    al_draw_text(font, al_map_rgb(255,255,255), 640/2, (480/4),ALLEGRO_ALIGN_CENTRE, "Chip8 Emulator");
+  
+    while(!sel_pressed){
+      if (al_wait_for_event_until(peripherals->event_queue, &(peripherals->event), &(peripherals->timeout))) {
+        switch (peripherals->event.type) {
+          case ALLEGRO_EVENT_KEY_DOWN:{
+            switch(peripherals->event.keyboard.keycode) {
+
+              case ALLEGRO_KEY_5:{
+                left_pressed = true;
+                selection--;
+                break;
+              }
+
+              case ALLEGRO_KEY_6:{
+                sel_pressed = true;
+                break;
+              }
+
+              case ALLEGRO_KEY_7:{
+                right_pressed = true;
+                selection++;
+                break;
+              }
+
+              default:{
+                break;
+              }
+            }
+            break;
+          }
+          case ALLEGRO_EVENT_KEY_UP:{
+            switch(peripherals->event.keyboard.keycode) {
+
+              case ALLEGRO_KEY_5:{
+                left_pressed = false;
+                break;
+              }
+
+              case ALLEGRO_KEY_6:{
+                sel_pressed = false;
+                break;
+              }
+
+              case ALLEGRO_KEY_7:{
+                right_pressed = false;
+                break;
+              }
+
+              default:{
+                break;
+              }
+            }
+            break;
+          }
+
+          default:
+            break;
+        }
+
+        if(sel_pressed){
+          selection = selection < 0 ? 0: selection;
+          selection = selection > 16 ? 16: selection;
+
+          int pathLength = roms[selection].length() + 11;
+          char* path_buffer = new char[pathLength];
+          
+          snprintf(path_buffer,pathLength,"../roms/%s.c8",roms[selection]);
+          cpu -> loadProgram(path_buffer);
+          
+          delete[] path_buffer;
+        }
+
+      }
+    usleep(7000);
+    }
+  }
 
   while (cpu->running){
     
@@ -655,7 +751,7 @@ int main(int argc, char* argv[]){
     if (cpu -> delay_timer > 0){
       cpu -> delay_timer--;
     }
-    usleep(4000);
+    usleep(7000);
   }
   return 0;
 }
