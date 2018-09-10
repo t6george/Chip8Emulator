@@ -1,6 +1,14 @@
 {
   "files.associations": {
     "iostream": "cpp",
-    "ostream": "cpp"
+    "ostream": "cpp",
+    "__bit_reference": "c",
+    "iterator": "c",
+    "memory": "c",
+    "string": "c",
+    "string_view": "c",
+    "thread": "c",
+    "bitset": "c",
+    "initializer_list": "c"
   }
 }
